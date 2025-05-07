@@ -11,17 +11,17 @@ export const useLivraisons = () => {
     disponibles: false,
     statistiques: false,
     statut: false,
-    service: false
+    service: false,
+    details: false
   });
   const [erreur, setErreur] = useState(null);
 
-  // Common fetch handler with operation-specific loading state
-  const fetchData = useCallback(async (endpoint, operation, transformFn) => {
+  const fetchData = useCallback(async (endpoint, operation, transformFn, params = {}) => {
     try {
       setChargement(prev => ({ ...prev, [operation]: true }));
       setErreur(null);
 
-      const response = await api.get(endpoint);
+      const response = await api.get(endpoint, { params });
       if (response.data?.success) {
         return transformFn ? transformFn(response.data) : response.data.data || [];
       }
@@ -35,47 +35,93 @@ export const useLivraisons = () => {
     }
   }, [api]);
 
-  // Fetch available deliveries
+  const obtenirLivraisonsDisponibles = useCallback(async () => {
+    const data = await fetchData('/livraisons/disponibles', 'disponibles', (res) => {
+      return res.data.map(item => ({
+        ...item,
+        colis: item.colis || []
+      }));
+    });
+    setLivraisonsDisponibles(data);
+    return data;
+  }, [fetchData]);
 
-
-  // Fetch today's deliveries
   const obtenirLivraisonsAujourdhui = useCallback(async () => {
     const data = await fetchData('/livraisons/mes-livraisons/aujourdhui', 'livraisons', (res) => {
       return res.data.map(item => ({
         ...item,
-        colis: item.colis || []
+        colis: item.colis || [],
+        date_livraison: item.date_livraison || item.colis?.[0]?.date_livraison
       }));
     });
     setLivraisons(data);
     return data;
   }, [fetchData]);
 
-  // Fetch all deliveries
   const obtenirMesLivraisons = useCallback(async () => {
     const data = await fetchData('/livraisons/mes-livraisons', 'livraisons', (res) => {
       return res.data.map(item => ({
         ...item,
-        colis: item.colis || []
+        colis: item.colis || [],
+        date_livraison: item.date_livraison || item.colis?.[0]?.date_livraison
       }));
     });
     setLivraisons(data);
     return data;
   }, [fetchData]);
 
-  // Fetch deliveries by delivery person ID
+  const obtenirLivraisonsParDate = useCallback(async (dateDebut, dateFin) => {
+    try {
+      setChargement(prev => ({ ...prev, livraisons: true }));
+      setErreur(null);
+  
+      // Format dates properly
+      const params = {};
+      if (dateDebut) {
+        const startDate = new Date(dateDebut);
+        startDate.setHours(0, 0, 0, 0);
+        params.dateDebut = startDate.toISOString();
+      }
+      if (dateFin) {
+        const endDate = new Date(dateFin);
+        endDate.setHours(23, 59, 59, 999);
+        params.dateFin = endDate.toISOString();
+      }
+  
+      // Change this endpoint to the correct one
+      const response = await api.get('/livraisons/mes-livraisons/par-date', { params });
+      
+      if (response.data?.success) {
+        const data = response.data.data.map(item => ({
+          ...item,
+          colis: item.colis || [],
+          date_livraison: item.date_livraison || item.colis?.[0]?.date_livraison
+        }));
+        setLivraisons(data);
+        return data;
+      }
+      throw new Error(response.data?.message || 'Échec de la récupération des livraisons');
+    } catch (err) {
+      setErreur(err.message);
+      console.error('Erreur lors de la récupération des livraisons par date:', err);
+      throw err;
+    } finally {
+      setChargement(prev => ({ ...prev, livraisons: false }));
+    }
+  }, [api]);
+
   const obtenirLivraisonsParLivreur = useCallback(async (livreurId) => {
     const data = await fetchData(`/livraisons/livreur/${livreurId}`, 'livraisons', (res) => {
       return res.data.map(item => ({
         ...item,
-        colis: item.colis || []
+        colis: item.colis || [],
+        date_livraison: item.date_livraison || item.colis?.[0]?.date_livraison
       }));
     });
     setLivraisons(data);
     return data;
   }, [fetchData]);
 
-
-  // Update delivery status with optimistic update
   const mettreAJourStatutLivraison = useCallback(async (livraisonId, nouveauStatut) => {
     const previousLivraisons = [...livraisons];
     try {
@@ -114,6 +160,7 @@ export const useLivraisons = () => {
       setChargement(prev => ({ ...prev, statut: false }));
     }
   }, [api, livraisons]);
+
   const obtenirLivraisonParId = useCallback(async (id) => {
     try {
       setChargement(prev => ({ ...prev, details: true }));
@@ -121,7 +168,10 @@ export const useLivraisons = () => {
   
       const response = await api.get(`/livraisons/obtenirLivraisonParId/${id}`);
       if (response.data?.success) {
-        return response.data.data;
+        return {
+          ...response.data.data,
+          date_livraison: response.data.data.date_livraison || response.data.data.colis?.[0]?.date_livraison
+        };
       }
       throw new Error(response.data?.message || 'Échec de la récupération des détails');
     } catch (err) {
@@ -133,7 +183,6 @@ export const useLivraisons = () => {
     }
   }, [api]);
 
-  // Update delivery person service status
   const updateServiceStatus = useCallback(async (enService) => {
     try {
       setChargement(prev => ({ ...prev, service: true }));
@@ -154,14 +203,12 @@ export const useLivraisons = () => {
     }
   }, [api, livreurInfo]);
 
-  // Fetch delivery statistics
   const obtenirStatistiques = useCallback(async () => {
     const data = await fetchData('/livraisons/mes-statistiques', 'statistiques');
     setStatistiques(data);
     return data;
   }, [fetchData]);
 
-  // Auto-fetch when livreurInfo is available
   useEffect(() => {
     if (livreurInfo?.utilisateur_id) {
       Promise.all([
@@ -178,12 +225,16 @@ export const useLivraisons = () => {
     chargement,
     erreur,
     
+    obtenirLivraisonsDisponibles,
     obtenirLivraisonsAujourdhui,
     obtenirMesLivraisons,
+    obtenirLivraisonsParDate,
     obtenirLivraisonsParLivreur,
     obtenirLivraisonParId,
+    
     mettreAJourStatutLivraison,
     updateServiceStatus,
+    
     obtenirStatistiques,
     refetch: obtenirLivraisonsAujourdhui
   };

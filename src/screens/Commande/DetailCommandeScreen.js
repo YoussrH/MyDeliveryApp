@@ -243,6 +243,7 @@ const DetailCommandeScreen = () => {
           </View>
           <Text style={tw`text-base text-slate-600 leading-6 bg-slate-50 p-4 rounded-lg`}>
             {livraison.instructions}
+            
           </Text>
         </View>
       )}

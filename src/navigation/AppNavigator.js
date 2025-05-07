@@ -12,13 +12,12 @@ import AccueilScreen from "@/screens/Acceuil/AccueilScreen";
 import CommandesScreen from "@/screens/Commande/CommandesScreen";
 import ScannerScreen from "@/screens/ScannerScreen";
 import NotificationsScreen from "@/screens/NotificationsScreen";
-import ProfilScreen from "@/screens/Auth/ProfilScreen";
 import DetailCommandeScreen from "@/screens/Commande/DetailCommandeScreen";
 import MotDePasseOublieScreen from "@/screens/Auth/MotDePasseOublieScreen";
 import ReinitialiserMotDePasseScreen from "@/screens/Auth/ReinitialiserMotDePasseScreen";
 import ChangerMotDePasseScreen from "@/screens/Auth/ChangerMotDePasseScreen";
 import VerifierCodeScreen from "@/screens/Auth/VerifierCodeScreen";
-
+import ProfilScreen from "@/screens/Auth/ProfilScreen";
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -130,7 +129,7 @@ const AuthStack = () => (
       options={{
         headerShown: true,
         title: "Mot de passe oublié",
-        headerTitleStyle: tw`text-lg font-semibold text-slate-800`,
+        headerTitleStyle: tw`font-mono  text-lg font-semibold text-slate-800`,
         headerBackTitleVisible: false,
         headerTintColor: tw.color("text-violet-600"),
         headerStyle: tw`bg-white border-b border-slate-200`,
@@ -142,7 +141,7 @@ const AuthStack = () => (
       options={{
         headerShown: true,
         title: "Vérification",
-        headerTitleStyle: tw`text-lg font-semibold text-slate-800`,
+        headerTitleStyle: tw` font-mono text-lg font-semibold text-slate-800`,
         headerBackTitleVisible: false,
         headerTintColor: tw.color("text-violet-600"),
         headerStyle: tw`bg-white border-b border-slate-200`,
@@ -154,62 +153,52 @@ const AuthStack = () => (
       options={{
         headerShown: true,
         title: "Réinitialisation",
-        headerTitleStyle: tw`text-lg font-semibold text-slate-800`,
+        headerTitleStyle: tw` font-mono text-lg font-semibold text-slate-800`,
         headerBackTitleVisible: false,
         headerTintColor: tw.color("text-violet-600"),
         headerStyle: tw`bg-white border-b border-slate-200`,
       }}
     />
-
   </Stack.Navigator>
 );
 
 const AppNavigator = () => {
   const { utilisateur, token, chargement } = useAuth();
 
-  // Debugging logs
-  console.log('AppNavigator auth state:', {
-    utilisateur: !!utilisateur,
-    token: !!token,
-    chargement
-  });
-
   if (chargement) {
     return (
       <View style={tw`flex-1 justify-center items-center bg-white`}>
         <ActivityIndicator size="large" color={tw.color("violet-600")} />
-        <Text style={tw`mt-4 text-slate-500`}>Chargement...</Text>
+        <Text style={tw`mt-4 font-mono  text-slate-500`}>Chargement...</Text>
       </View>
     );
   }
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-{/*            <Stack.Screen name="Splash" component={SplashScreen} />
- */}
+      <Stack.Screen name="Splash" component={SplashScreen} />
       {utilisateur && token ? (
         <>
           <Stack.Screen name="App" component={TabNavigator} />
-          
-          <Stack.Screen
-          name="LivraisonDetail"
-          component={DetailCommandeScreen}
-          options={{
-            headerShown: true,
-            title: "Détails de livraison",
-            headerTitleStyle: tw`text-lg font-semibold text-slate-800`,
-            headerBackTitleVisible: false,
-            headerTintColor: tw.color("text-violet-600"),
-            headerStyle: tw`bg-white border-b border-slate-200`,
-          }}
-        />
+          <Stack.Screen 
+            name="Commandes" 
+            component={CommandesScreen}
+            options={{
+              headerShown: true,
+              title: "Commandes",
+              headerTitleStyle: tw` font-mono text-lg font-semibold text-slate-800`,
+              headerBackTitleVisible: false,
+              headerTintColor: tw.color("text-violet-600"),
+              headerStyle: tw`bg-white border-b border-slate-200`,
+            }}
+          />
           <Stack.Screen
             name="DetailCommande"
             component={DetailCommandeScreen}
             options={{
               headerShown: true,
-              title: "Détails",
-              headerTitleStyle: tw`text-lg font-semibold text-slate-800`,
+              title: "Détails de commande",
+              headerTitleStyle: tw` font-mono  text-lg font-semibold text-slate-800`,
               headerBackTitleVisible: false,
               headerTintColor: tw.color("text-violet-600"),
               headerStyle: tw`bg-white border-b border-slate-200`,
@@ -221,7 +210,19 @@ const AppNavigator = () => {
             options={{
               headerShown: true,
               title: "Changer mot de passe",
-              headerTitleStyle: tw`text-lg font-semibold text-slate-800`,
+              headerTitleStyle: tw` font-mono text-lg font-semibold text-slate-800`,
+              headerBackTitleVisible: false,
+              headerTintColor: tw.color("text-violet-600"),
+              headerStyle: tw`bg-white border-b border-slate-200`,
+            }}
+          />
+            <Stack.Screen 
+            name="ReinitialiserMotDePasse" 
+            component={ReinitialiserMotDePasseScreen}
+            options={{
+              headerShown: true,
+              title: "Réinitialisation",
+              headerTitleStyle: tw`font-mono text-lg font-semibold text-slate-800`,
               headerBackTitleVisible: false,
               headerTintColor: tw.color("text-violet-600"),
               headerStyle: tw`bg-white border-b border-slate-200`,

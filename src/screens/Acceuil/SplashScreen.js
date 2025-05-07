@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { View, Text, Animated, Easing } from "react-native";
 import { FontAwesome5 } from "@expo/vector-icons";
 import tw from "@/utils/tw";
@@ -8,10 +8,10 @@ const SplashScreen = ({ navigation }) => {
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const translateYAnim = useRef(new Animated.Value(20)).current;
-  const { checkAuth } = useAuth();
-  const [animationComplete, setAnimationComplete] = useState(false);
+  const { utilisateur, token, chargement } = useAuth();
 
   useEffect(() => {
+    // Start the animation
     const animation = Animated.parallel([
       Animated.timing(scaleAnim, {
         toValue: 1,
@@ -32,28 +32,24 @@ const SplashScreen = ({ navigation }) => {
       }),
     ]);
 
-    animation.start(() => {
-      setAnimationComplete(true);
-    });
+    // Set up navigation timeout
+    const navigationTimer = setTimeout(() => {
+      if (!chargement) {
+        if (utilisateur && token) {
+          navigation.replace("App");
+        } else {
+          navigation.replace("Auth");
+        }
+      }
+    }, 1200); // Total duration (animation + slight delay)
 
-    return () => animation.stop();
-  }, []);
+    animation.start();
 
-  useEffect(() => {
-    if (animationComplete) {
-      const timer = setTimeout(() => {
-        checkAuth().then(user => {
-          if (user) {
-            navigation.replace("MainTabs");
-          } else {
-            navigation.replace("Auth");
-          }
-        });
-      }, 2000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [animationComplete]);
+    return () => {
+      animation.stop();
+      clearTimeout(navigationTimer);
+    };
+  }, [chargement, utilisateur, token]);
 
   return (
     <View style={tw`flex-1 justify-center items-center bg-white`}>
@@ -73,7 +69,9 @@ const SplashScreen = ({ navigation }) => {
           <FontAwesome5 name="motorcycle" style={tw`text-violet-600`} size={40} />
         </View>
         <Text style={tw`text-3xl font-bold text-slate-800`}>Livreur Pro</Text>
-        <Text style={tw`text-lg text-slate-500 mt-2`}>Livraisons intelligentes</Text>
+        <Text style={tw`text-lg text-slate-500 mt-2`}>
+          {chargement ? "Chargement..." : "Livraisons intelligentes"}
+        </Text>
       </Animated.View>
     </View>
   );

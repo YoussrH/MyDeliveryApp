@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState ,useEffect} from "react";
 import { 
   View, 
   Text, 
@@ -82,6 +82,17 @@ const ReinitialiserMotDePasseScreen = ({ route, navigation }) => {
       setErreur("Une erreur est survenue. Veuillez réessayer.");
     }
   };
+
+  useEffect(() => {
+    if (!route.params?.email || !route.params?.code || !route.params?.token) {
+      console.log("[ERROR] Missing required params, redirecting back");
+      Alert.alert(
+        "Erreur",
+        "Session de réinitialisation invalide. Veuillez recommencer.",
+        [{ text: "OK", onPress: () => navigation.navigate("MotDePasseOublie") }]
+      );
+    }
+  }, [route.params]);
 
   const MotDePasseIcon = () => (
     <TouchableOpacity 

@@ -44,12 +44,11 @@ const VerifierCodeScreen = ({ route, navigation }) => {
       console.log("[DEBUG] API response:", result);
       
       if (result.succes) {
-        console.log("[DEBUG] Code verification successful");
-        // Navigate to reset screen with ALL required parameters
-        navigation.navigate("ReinitialiserMotDePasse", { 
+        console.log("[DEBUG] Code verification successful, navigating to reset");
+        navigation.navigate("ReinitialiserMotDePasse", {
           email,
           code,
-          token: result.donnees.token // Make sure to pass the token!
+          token: result.token // Use the token directly from result
         });
       } else {
         console.log("[DEBUG] Code verification failed:", result.erreur);

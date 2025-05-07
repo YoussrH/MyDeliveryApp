@@ -35,7 +35,6 @@ const AccueilScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
-  // Filter deliveries based on search query
   const filteredDeliveries = livraisons.filter(delivery => 
     (delivery.reference?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
     (delivery.client_nom?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
@@ -54,7 +53,6 @@ const AccueilScreen = () => {
     }
   }, [obtenirLivraisonsAujourdhui, obtenirStatistiques]);
 
-  // Initial data load
   useEffect(() => {
     loadData();
   }, [loadData]);
@@ -88,7 +86,7 @@ const AccueilScreen = () => {
   };
 
   const handleScanPress = () => {
-    navigation.navigate("QRScanner");
+    navigation.navigate("Scanner");
   };
 
   const getStatutBadge = (statut) => {
@@ -207,7 +205,7 @@ const AccueilScreen = () => {
             Mes livraisons
           </Text>
           {filteredDeliveries.length > 0 && (
-            <TouchableOpacity onPress={() => navigation.navigate("Livraisons")}>
+            <TouchableOpacity onPress={() => navigation.navigate("Commandes")}>
               <Text style={tw`text-violet-600 text-sm font-medium`}>Voir tout</Text>
             </TouchableOpacity>
           )}
@@ -218,7 +216,8 @@ const AccueilScreen = () => {
             <TouchableOpacity 
               key={delivery.livraison_id} 
               activeOpacity={0.7}
-              onPress={() => navigation.navigate("DetailCommande", { livraisonId: delivery.livraison_id })}            >
+              onPress={() => navigation.navigate("DetailCommande", { livraisonId: delivery.livraison_id })}
+            >
               <View style={tw`bg-white p-4 rounded-xl shadow-sm mb-3`}>
                 <View style={tw`flex-row justify-between items-center mb-3`}>
                   <View>
@@ -255,7 +254,6 @@ const AccueilScreen = () => {
                     </Text>
                   </View>
                 )}
-
               </View>
             </TouchableOpacity>
           ))
@@ -292,7 +290,7 @@ const AccueilScreen = () => {
 
           <TouchableOpacity 
             style={tw`items-center w-1/3`}
-            onPress={() => navigation.navigate("Livraisons")}
+            onPress={() => navigation.navigate("Commandes")}
           >
             <View style={tw`w-14 h-14 bg-blue-100 rounded-xl justify-center items-center mb-2`}>
               <MaterialCommunityIcons 

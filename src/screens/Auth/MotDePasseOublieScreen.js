@@ -25,9 +25,9 @@ const MotDePasseOublieScreen = ({ navigation }) => {
   
   const { motDePasseOublie, chargement } = useAuth();
 
-  const demarrerCompteur = () => {
+/*   const demarrerCompteur = () => {
     console.log("[DEBUG] Starting countdown timer");
-    setCompteur(30);
+     setCompteur(30);
     compteurRef.current = setInterval(() => {
       setCompteur(prev => {
         if (prev <= 1) {
@@ -38,7 +38,7 @@ const MotDePasseOublieScreen = ({ navigation }) => {
         return prev - 1;
       });
     }, 1000);
-  };
+  }; */
   const handleDemandeReinitialisation = async () => {
     console.log("[DEBUG] handleDemandeReinitialisation triggered");
     
@@ -66,7 +66,7 @@ const MotDePasseOublieScreen = ({ navigation }) => {
       if (result.succes || result.erreur?.includes("envoyé avec succès")) {
         console.log("[DEBUG] Password reset request successful");
         setSucces(`Un code a été envoyé à ${email}`);
-        demarrerCompteur();
+        /* demarrerCompteur(); */
         
         console.log("[DEBUG] Navigating to VerifierCode");
         navigation.navigate("VerifierCode", { email });

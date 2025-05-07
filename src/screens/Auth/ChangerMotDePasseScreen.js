@@ -20,6 +20,11 @@ const ChangerMotDePasseScreen = ({ navigation }) => {
   } = useAuth();
 
   const handleChangementMotDePasse = async () => {
+    // Reset messages
+    setErreur("");
+    setSucces("");
+
+    // Validate inputs
     if (!motDePasseActuel || !nouveauMotDePasse || !confirmerMotDePasse) {
       setErreur("Veuillez remplir tous les champs");
       return;
@@ -30,23 +35,38 @@ const ChangerMotDePasseScreen = ({ navigation }) => {
       return;
     }
 
-    setErreur("");
-    setSucces("");
+    if (motDePasseActuel === nouveauMotDePasse) {
+      setErreur("Le nouveau mot de passe doit être différent de l'actuel");
+      return;
+    }
 
-    const result = await changerMotDePasse(motDePasseActuel, nouveauMotDePasse);
-    
-    if (result.succes) {
-      setSucces("Mot de passe changé avec succès");
-      setTimeout(() => {
-        navigation.goBack();
-      }, 1500);
-    } else {
-      setErreur(result.erreur || "Échec du changement de mot de passe");
+    try {
+      const result = await changerMotDePasse(motDePasseActuel, nouveauMotDePasse);
+      
+      if (result.succes) {
+        setSucces("Mot de passe changé avec succès");
+        // Clear form
+        setMotDePasseActuel("");
+        setNouveauMotDePasse("");
+        setConfirmerMotDePasse("");
+        // Navigate back after 1.5 seconds
+        setTimeout(() => {
+          navigation.goBack();
+        }, 1500);
+      } else {
+        setErreur(result.erreur || "Échec du changement de mot de passe");
+      }
+    } catch (error) {
+      setErreur("Une erreur est survenue lors du changement de mot de passe");
+      console.error("Erreur changement mot de passe:", error);
     }
   };
 
   const MotDePasseIcon = () => (
-    <TouchableOpacity onPress={() => setAfficherMotDePasse(!afficherMotDePasse)}>
+    <TouchableOpacity 
+      onPress={() => setAfficherMotDePasse(!afficherMotDePasse)}
+      style={tw`p-2`}
+    >
       {afficherMotDePasse ? (
         <Ionicons name="eye-off" size={20} color={tw.color("text-slate-500")} />
       ) : (
@@ -75,6 +95,7 @@ const ChangerMotDePasseScreen = ({ navigation }) => {
         </View>
 
         <View style={tw`w-full`}>
+          {/* Error Message */}
           {erreur ? (
             <View style={tw`flex-row items-center bg-red-100 p-3 rounded-lg mb-4`}>
               <Ionicons name="alert-circle" size={20} color={tw.color("text-red-500")} />
@@ -82,6 +103,7 @@ const ChangerMotDePasseScreen = ({ navigation }) => {
             </View>
           ) : null}
 
+          {/* Success Message */}
           {succes ? (
             <View style={tw`flex-row items-center bg-green-100 p-3 rounded-lg mb-4`}>
               <Ionicons name="checkmark-circle" size={20} color={tw.color("text-green-500")} />
@@ -89,6 +111,7 @@ const ChangerMotDePasseScreen = ({ navigation }) => {
             </View>
           ) : null}
 
+          {/* Current Password Input */}
           <Input
             label="Mot de passe actuel"
             placeholder="Votre mot de passe actuel"
@@ -98,8 +121,11 @@ const ChangerMotDePasseScreen = ({ navigation }) => {
             containerStyle={tw`mb-4`}
             leftIcon={<Ionicons name="lock-closed" size={20} color={tw.color("text-slate-500")} />}
             rightIcon={<MotDePasseIcon />}
+            autoCapitalize="none"
+            autoCorrect={false}
           />
 
+          {/* New Password Input */}
           <Input
             label="Nouveau mot de passe"
             placeholder="Votre nouveau mot de passe"
@@ -109,8 +135,11 @@ const ChangerMotDePasseScreen = ({ navigation }) => {
             containerStyle={tw`mb-4`}
             leftIcon={<Ionicons name="lock-closed" size={20} color={tw.color("text-slate-500")} />}
             rightIcon={<MotDePasseIcon />}
+            autoCapitalize="none"
+            autoCorrect={false}
           />
 
+          {/* Confirm New Password Input */}
           <Input
             label="Confirmer le nouveau mot de passe"
             placeholder="Confirmez votre nouveau mot de passe"
@@ -120,13 +149,17 @@ const ChangerMotDePasseScreen = ({ navigation }) => {
             containerStyle={tw`mb-6`}
             leftIcon={<Ionicons name="lock-closed" size={20} color={tw.color("text-slate-500")} />}
             rightIcon={<MotDePasseIcon />}
+            autoCapitalize="none"
+            autoCorrect={false}
           />
 
+          {/* Submit Button */}
           <Button 
             title="Changer le mot de passe" 
             onPress={handleChangementMotDePasse} 
             loading={chargement} 
             style={tw`mt-2 h-12`}
+            disabled={chargement}
           />
         </View>
       </ScrollView>

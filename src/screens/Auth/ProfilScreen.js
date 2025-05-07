@@ -1,160 +1,114 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  ScrollView, 
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
   Alert,
   ActivityIndicator,
   TextInput,
   Switch
 } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAuth } from '@/contexts/AuthContext';
-import tw from "@/utils/tw";
+import tw from '@/utils/tw';
 import Button from '@/components/Button';
+import axios from 'axios';
 
 const ProfilScreen = ({ navigation }) => {
-  const { 
-    utilisateur, 
-    livreurInfo, 
-    deconnexion, 
-    api, 
-    mettreAJourLivreur ,
-    verifierAuthentification
-  } = useAuth();
-  
-  const [donneesUtilisateur, setDonneesUtilisateur] = useState(null);
-  const [chargement, setChargement] = useState(true);
+  const { utilisateur, deconnexion } = useAuth();
+
   const [edition, setEdition] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [profileData, setProfileData] = useState(null);
   const [formData, setFormData] = useState({
+    utilisateur: {
+      prenom: '',
+      nom: '',
+      email: ''
+    },
     telephone: '',
     statut: false,
     type_vehicule: '',
-    plaque_immatriculation: '',
-    utilisateur: {
-      nom: '',
-      prenom: '',
-      email: ''
-    }
+    plaque_immatriculation: ''
   });
 
   useEffect(() => {
-    const recupererDonnees = async () => {
+    const fetchProfile = async () => {
       try {
-        setChargement(true);
-        
-        // Fetch user data
-        const response = await api.get(`/auth/utilisateur`);
-        
-        if (response.data?.utilisateur) {
-          setDonneesUtilisateur(response.data.utilisateur);
-          
-          // If user is a livreur, set the form data
-          if (response.data.utilisateur.role === 'livreur') {
-            setFormData({
-              telephone: livreurInfo?.telephone || '',
-              statut: livreurInfo?.statut === 'actif' || false,
-              type_vehicule: livreurInfo?.type_vehicule || '',
-              plaque_immatriculation: livreurInfo?.plaque_immatriculation || '',
-              utilisateur: {
-                nom: response.data.utilisateur.nom || '',
-                prenom: response.data.utilisateur.prenom || '',
-                email: response.data.utilisateur.email || ''
-              }
-            });
-          }
-        } else {
-          throw new Error('Données utilisateur non disponibles');
-        }
-      } catch (erreur) {
-        console.error('Erreur:', erreur);
-        Alert.alert('Erreur', 'Impossible de charger les données');
-      } finally {
-        setChargement(false);
+        const res = await axios.get('http://192.168.1.16:5000/livreur/mon-profil');
+        const data = res.data.livreur;
+        setProfileData(data);
+        setFormData({
+          utilisateur: {
+            prenom: data.utilisateur.prenom || '',
+            nom: data.utilisateur.nom || '',
+            email: data.utilisateur.email || ''
+          },
+          telephone: data.telephone || '',
+          statut: data.statut === 'actif',
+          type_vehicule: data.type_vehicule || '',
+          plaque_immatriculation: data.plaque_immatriculation || ''
+        });
+      } catch (err) {
+        console.error(err);
+        Alert.alert('Erreur', "Impossible de charger les données du profil.");
       }
     };
 
-    if (utilisateur) {
-      recupererDonnees();
-    }
-  }, [utilisateur, livreurInfo]);
+    fetchProfile();
+  }, []);
 
-  const handleDeconnexion = async () => {
-    try {
-      await deconnexion();
-    } catch (erreur) {
-      console.error('Erreur de déconnexion:', erreur);
-      Alert.alert('Erreur', 'Échec de la déconnexion');
+  const toggleEdition = () => setEdition(!edition);
+
+  const handleChange = (field, value) => {
+    if (field.startsWith('utilisateur.')) {
+      const subField = field.split('.')[1];
+      setFormData((prev) => ({
+        ...prev,
+        utilisateur: {
+          ...prev.utilisateur,
+          [subField]: value
+        }
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }));
     }
+  };
+
+  const soumettreModifications = async () => {
+    setUpdating(true);
+    try {
+      await axios.put('http://192.168.1.16:5000/livreur/mettre-a-jour', {
+        ...formData,
+        statut: formData.statut ? 'actif' : 'inactif'
+      });
+      Alert.alert('Succès', 'Profil mis à jour avec succès.');
+      setEdition(false);
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Erreur', "Une erreur s'est produite lors de la mise à jour.");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleDeconnexion = () => {
+    Alert.alert('Confirmation', 'Voulez-vous vous déconnecter ?', [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Déconnexion', onPress: deconnexion }
+    ]);
   };
 
   const handleChangementMotDePasse = () => {
     navigation.navigate('ChangerMotDePasse');
   };
 
-  const toggleEdition = () => {
-    setEdition(!edition);
-  };
-
-  const handleChange = (name, value) => {
-    if (name.includes('.')) {
-      const [parent, child] = name.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent],
-          [child]: value
-        }
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
-  };
-
-  const soumettreModifications = async () => {
-    try {
-      setChargement(true);
-      
-      const dataToSend = {
-        telephone: formData.telephone,
-        statut: formData.statut ? 'actif' : 'inactif',
-        type_vehicule: formData.type_vehicule,
-        plaque_immatriculation: formData.plaque_immatriculation,
-        utilisateur: {
-          nom: formData.utilisateur.nom,
-          prenom: formData.utilisateur.prenom,
-          email: formData.utilisateur.email
-        }
-      };
-  
-      const response = await api.put(
-        `/livreur/mettre-a-jour/${utilisateur.id}`,
-        dataToSend
-      );
-      
-      if (response.data?.success) {
-        Alert.alert('Succès', 'Profil mis à jour avec succès');
-        setEdition(false);
-        await verifierAuthentification();
-      } else {
-        throw new Error(response.data?.message || 'Échec de la mise à jour');
-      }
-    } catch (erreur) {
-      console.error('Erreur:', erreur);
-      Alert.alert('Erreur', erreur.message || 'Erreur lors de la mise à jour');
-    } finally {
-      setChargement(false);
-    }
-  };
-
-  if (chargement) {
+  if (!profileData) {
     return (
-      <View style={tw`flex-1 justify-center items-center`}>
-        <ActivityIndicator size="large" color={tw.color("violet-600")} />
+      <View style={tw`flex-1 justify-center items-center bg-slate-50`}>
+        <ActivityIndicator size="large" color={tw.color('violet-600')} />
       </View>
     );
   }
@@ -165,7 +119,7 @@ const ProfilScreen = ({ navigation }) => {
         <View style={tw`w-24 h-24 rounded-full bg-violet-100 justify-center items-center mb-4`}>
           <Ionicons name="person" size={48} color={tw.color('text-violet-600')} />
         </View>
-        
+
         {edition ? (
           <>
             <TextInput
@@ -183,10 +137,10 @@ const ProfilScreen = ({ navigation }) => {
           </>
         ) : (
           <Text style={tw`text-xl font-bold text-slate-800`}>
-            {utilisateur?.prenom} {utilisateur?.nom}
+            {profileData?.utilisateur?.prenom} {profileData?.utilisateur?.nom}
           </Text>
         )}
-        
+
         {edition ? (
           <TextInput
             style={tw`text-slate-500 w-full text-center`}
@@ -196,9 +150,9 @@ const ProfilScreen = ({ navigation }) => {
             keyboardType="email-address"
           />
         ) : (
-          <Text style={tw`text-slate-500`}>{utilisateur?.email}</Text>
+          <Text style={tw`text-slate-500`}>{profileData?.utilisateur?.email}</Text>
         )}
-        
+
         {utilisateur?.role === 'livreur' && (
           <View style={tw`mt-2 bg-violet-100 px-3 py-1 rounded-full`}>
             <Text style={tw`text-violet-700 text-sm font-medium`}>Livreur</Text>
@@ -206,22 +160,20 @@ const ProfilScreen = ({ navigation }) => {
         )}
       </View>
 
+      {/* Bloc Informations */}
       <View style={tw`bg-white rounded-lg shadow-sm p-4 mb-4`}>
         <View style={tw`flex-row justify-between items-center mb-3`}>
           <Text style={tw`text-lg font-semibold text-slate-800`}>Informations</Text>
           {utilisateur?.role === 'livreur' && (
             <TouchableOpacity onPress={toggleEdition}>
-              <Ionicons 
-                name={edition ? 'close' : 'create'} 
-                size={20} 
-                color={tw.color('text-violet-600')} 
-              />
+              <Ionicons name={edition ? 'close' : 'create'} size={20} color={tw.color('text-violet-600')} />
             </TouchableOpacity>
           )}
         </View>
-        
+
         {utilisateur?.role === 'livreur' ? (
           <>
+            {/* Champs spécifiques au livreur */}
             <View style={tw`py-2 border-b border-slate-100`}>
               <Text style={tw`text-sm text-slate-500 mb-1`}>Téléphone</Text>
               {edition ? (
@@ -233,17 +185,15 @@ const ProfilScreen = ({ navigation }) => {
                   keyboardType="phone-pad"
                 />
               ) : (
-                <Text style={tw`text-slate-700`}>{livreurInfo?.telephone || 'Non renseigné'}</Text>
+                <Text style={tw`text-slate-700`}>{profileData?.telephone || 'Non renseigné'}</Text>
               )}
             </View>
-            
+
             <View style={tw`py-2 border-b border-slate-100`}>
               <Text style={tw`text-sm text-slate-500 mb-1`}>Statut</Text>
               {edition ? (
                 <View style={tw`flex-row items-center`}>
-                  <Text style={tw`text-slate-700 mr-2`}>
-                    {formData.statut ? 'Actif' : 'Inactif'}
-                  </Text>
+                  <Text style={tw`text-slate-700 mr-2`}>{formData.statut ? 'Actif' : 'Inactif'}</Text>
                   <Switch
                     value={formData.statut}
                     onValueChange={(value) => handleChange('statut', value)}
@@ -253,11 +203,11 @@ const ProfilScreen = ({ navigation }) => {
                 </View>
               ) : (
                 <Text style={tw`text-slate-700`}>
-                  {livreurInfo?.statut === 'actif' ? 'Actif' : 'Inactif'}
+                  {profileData?.statut === 'actif' ? 'Actif' : 'Inactif'}
                 </Text>
               )}
             </View>
-            
+
             <View style={tw`py-2 border-b border-slate-100`}>
               <Text style={tw`text-sm text-slate-500 mb-1`}>Type de véhicule</Text>
               {edition ? (
@@ -268,12 +218,10 @@ const ProfilScreen = ({ navigation }) => {
                   placeholder="Ex: Moto, Voiture, Vélo"
                 />
               ) : (
-                <Text style={tw`text-slate-700`}>
-                  {livreurInfo?.type_vehicule || 'Non renseigné'}
-                </Text>
+                <Text style={tw`text-slate-700`}>{profileData?.type_vehicule || 'Non renseigné'}</Text>
               )}
             </View>
-            
+
             <View style={tw`py-2`}>
               <Text style={tw`text-sm text-slate-500 mb-1`}>Plaque d'immatriculation</Text>
               {edition ? (
@@ -284,9 +232,7 @@ const ProfilScreen = ({ navigation }) => {
                   placeholder="Plaque d'immatriculation"
                 />
               ) : (
-                <Text style={tw`text-slate-700`}>
-                  {livreurInfo?.plaque_immatriculation || 'Non renseigné'}
-                </Text>
+                <Text style={tw`text-slate-700`}>{profileData?.plaque_immatriculation || 'Non renseigné'}</Text>
               )}
             </View>
           </>
@@ -294,18 +240,22 @@ const ProfilScreen = ({ navigation }) => {
           <>
             <View style={tw`flex-row items-center py-2 border-b border-slate-100`}>
               <Ionicons name="mail" size={20} color={tw.color('text-slate-500')} style={tw`mr-3`} />
-              <Text style={tw`text-slate-700`}>{utilisateur?.email}</Text>
+              <Text style={tw`text-slate-700`}>{profileData?.utilisateur?.email}</Text>
             </View>
-            
+
             <View style={tw`flex-row items-center py-2`}>
-              <MaterialCommunityIcons 
-                name={utilisateur?.est_verifie ? 'shield-check' : 'shield-alert'} 
-                size={20} 
-                color={utilisateur?.est_verifie ? tw.color('text-green-500') : tw.color('text-yellow-500')} 
-                style={tw`mr-3`} 
+              <MaterialCommunityIcons
+                name={profileData?.utilisateur?.est_verifie ? 'shield-check' : 'shield-alert'}
+                size={20}
+                color={
+                  profileData?.utilisateur?.est_verifie
+                    ? tw.color('text-green-500')
+                    : tw.color('text-yellow-500')
+                }
+                style={tw`mr-3`}
               />
               <Text style={tw`text-slate-700`}>
-                {utilisateur?.est_verifie ? 'Compte vérifié' : 'Compte non vérifié'}
+                {profileData?.utilisateur?.est_verifie ? 'Compte vérifié' : 'Compte non vérifié'}
               </Text>
             </View>
           </>
@@ -314,26 +264,27 @@ const ProfilScreen = ({ navigation }) => {
 
       {edition && (
         <View style={tw`mb-4`}>
-          <Button 
+          <Button
             title="Enregistrer les modifications"
             onPress={soumettreModifications}
-            loading={chargement}
+            loading={updating}
           />
         </View>
       )}
 
       <View style={tw`bg-white rounded-lg shadow-sm p-4 mb-4`}>
         <Text style={tw`text-lg font-semibold text-slate-800 mb-3`}>Actions</Text>
-        
-        <Button 
+
+        <Button
           title="Changer le mot de passe"
           onPress={handleChangementMotDePasse}
           variant="outline"
-          icon={<Ionicons name="key" size={18} color={tw.color('text-violet-600')} />}
-          style={tw`mb-3` } color={tw.color('text-white')}
+          icon={<Ionicons name="key" size={18} color={tw.color('text-white')} />}
+          style={tw`mb-3 `}
+          
         />
-        
-        <Button 
+
+        <Button
           title="Déconnexion"
           onPress={handleDeconnexion}
           variant="danger"
