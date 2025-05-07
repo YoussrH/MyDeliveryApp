@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import axios from 'axios';
 
 export const useLivraisons = () => {
-  const { api, livreurInfo } = useAuth();
+  const { api, livreurInfo, estAuthentifie } = useAuth();
   const [livraisons, setLivraisons] = useState([]);
   const [livraisonsDisponibles, setLivraisonsDisponibles] = useState([]);
   const [statistiques, setStatistiques] = useState(null);
@@ -15,26 +16,57 @@ export const useLivraisons = () => {
     details: false
   });
   const [erreur, setErreur] = useState(null);
+  
+  // Track all active requests for cancellation
+  const activeRequests = useRef(new Set());
 
   const fetchData = useCallback(async (endpoint, operation, transformFn, params = {}) => {
+    const source = axios.CancelToken.source();
+    activeRequests.current.add(source);
+  
     try {
+      // Skip if not authenticated - don't throw error, just return empty
+      if (!estAuthentifie) {
+        return transformFn ? transformFn({ data: [] }) : [];
+      }
+  
       setChargement(prev => ({ ...prev, [operation]: true }));
       setErreur(null);
-
-      const response = await api.get(endpoint, { params });
+  
+      const response = await api.get(endpoint, { 
+        params,
+        cancelToken: source.token 
+      });
+  
       if (response.data?.success) {
         return transformFn ? transformFn(response.data) : response.data.data || [];
       }
-      throw new Error(response.data?.message || 'Échec de la requête');
+      throw new Error(response.data?.message || 'Request failed');
     } catch (err) {
-      setErreur(err.message);
-      console.error(`Erreur API (${operation}):`, err);
-      throw err;
+      // Only process non-cancellation errors
+      if (!axios.isCancel(err)) {
+        setErreur(err.message);
+        console.error(`API Error (${operation}):`, err);
+        throw err;
+      }
+      // For cancellation errors, just return empty data
+      return transformFn ? transformFn({ data: [] }) : [];
     } finally {
+      activeRequests.current.delete(source);
       setChargement(prev => ({ ...prev, [operation]: false }));
     }
-  }, [api]);
+  }, [api, estAuthentifie]);
+  // Clean up all requests on unmount or auth change
+  useEffect(() => {
+    return () => {
+      activeRequests.current.forEach(source => {
+        source.cancel('Component unmounted or auth changed');
+      });
+      activeRequests.current.clear();
+    };
+  }, [estAuthentifie]);
 
+  // Get available deliveries
   const obtenirLivraisonsDisponibles = useCallback(async () => {
     const data = await fetchData('/livraisons/disponibles', 'disponibles', (res) => {
       return res.data.map(item => ({
@@ -46,6 +78,7 @@ export const useLivraisons = () => {
     return data;
   }, [fetchData]);
 
+  // Get today's deliveries
   const obtenirLivraisonsAujourdhui = useCallback(async () => {
     const data = await fetchData('/livraisons/mes-livraisons/aujourdhui', 'livraisons', (res) => {
       return res.data.map(item => ({
@@ -58,6 +91,7 @@ export const useLivraisons = () => {
     return data;
   }, [fetchData]);
 
+  // Get all deliveries
   const obtenirMesLivraisons = useCallback(async () => {
     const data = await fetchData('/livraisons/mes-livraisons', 'livraisons', (res) => {
       return res.data.map(item => ({
@@ -70,12 +104,19 @@ export const useLivraisons = () => {
     return data;
   }, [fetchData]);
 
+  // Get deliveries by date range
   const obtenirLivraisonsParDate = useCallback(async (dateDebut, dateFin) => {
+    const source = axios.CancelToken.source();
+    activeRequests.current.add(source);
+
     try {
       setChargement(prev => ({ ...prev, livraisons: true }));
       setErreur(null);
-  
-      // Format dates properly
+
+      if (!estAuthentifie) {
+        throw new axios.Cancel('User not authenticated');
+      }
+
       const params = {};
       if (dateDebut) {
         const startDate = new Date(dateDebut);
@@ -87,9 +128,11 @@ export const useLivraisons = () => {
         endDate.setHours(23, 59, 59, 999);
         params.dateFin = endDate.toISOString();
       }
-  
-      // Change this endpoint to the correct one
-      const response = await api.get('/livraisons/mes-livraisons/par-date', { params });
+
+      const response = await api.get('/livraisons/mes-livraisons/par-date', { 
+        params,
+        cancelToken: source.token 
+      });
       
       if (response.data?.success) {
         const data = response.data.data.map(item => ({
@@ -100,133 +143,60 @@ export const useLivraisons = () => {
         setLivraisons(data);
         return data;
       }
-      throw new Error(response.data?.message || 'Échec de la récupération des livraisons');
+      throw new Error(response.data?.message || 'Failed to get deliveries by date');
     } catch (err) {
-      setErreur(err.message);
-      console.error('Erreur lors de la récupération des livraisons par date:', err);
+      if (!axios.isCancel(err)) {
+        setErreur(err.message);
+        console.error('Error getting deliveries by date:', err);
+      }
       throw err;
     } finally {
+      activeRequests.current.delete(source);
       setChargement(prev => ({ ...prev, livraisons: false }));
     }
-  }, [api]);
+  }, [api, estAuthentifie]);
 
-  const obtenirLivraisonsParLivreur = useCallback(async (livreurId) => {
-    const data = await fetchData(`/livraisons/livreur/${livreurId}`, 'livraisons', (res) => {
-      return res.data.map(item => ({
-        ...item,
-        colis: item.colis || [],
-        date_livraison: item.date_livraison || item.colis?.[0]?.date_livraison
-      }));
-    });
-    setLivraisons(data);
-    return data;
-  }, [fetchData]);
-
- 
-  const mettreAJourStatutLivraison = useCallback(async (commandeId, nouveauStatut) => {
-    const previousLivraisons = [...livraisons];
-    try {
-      setChargement(prev => ({ ...prev, statut: true }));
-      setErreur(null);
-  
-      // Optimistic update
-      setLivraisons(prev => prev.map(liv => 
-        liv.id === commandeId 
-          ? { 
-              ...liv, 
-              statut: nouveauStatut,
-              colis: liv.colis.map(col => ({
-                ...col,
-                statut: nouveauStatut === 'livree' ? 'livree' : col.statut,
-                ...(nouveauStatut === 'livree' && { date_livraison: new Date().toISOString() })
-              }))
-            } 
-          : liv
-      ));
-  
-      // Updated API call to match backend
-      const response = await api.put(`/livraisons/${commandeId}/statut`, { 
-        statut: nouveauStatut,
-        livreur_id: livreurInfo?.utilisateur_id 
-      });
-      
-      if (response.data?.success) {
-        // If successful, update with the actual response data
-        const updatedLivraison = response.data.data;
-        setLivraisons(prev => prev.map(liv => 
-          liv.id === commandeId ? updatedLivraison : liv
-        ));
-        return true;
-      }
-      
-      // Rollback on failure
-      setLivraisons(previousLivraisons);
-      throw new Error(response.data?.message || 'Échec de la mise à jour du statut');
-    } catch (err) {
-      setErreur(err.message);
-      console.error('Erreur mise à jour statut:', err);
-      return false;
-    } finally {
-      setChargement(prev => ({ ...prev, statut: false }));
-    }
-  }, [api, livraisons, livreurInfo]);
-
-  const obtenirLivraisonParId = useCallback(async (id) => {
-    try {
-      setChargement(prev => ({ ...prev, details: true }));
-      setErreur(null);
-  
-      const response = await api.get(`/livraisons/obtenirLivraisonParId/${id}`);
-      if (response.data?.success) {
-        return {
-          ...response.data.data,
-          date_livraison: response.data.data.date_livraison || response.data.data.colis?.[0]?.date_livraison
-        };
-      }
-      throw new Error(response.data?.message || 'Échec de la récupération des détails');
-    } catch (err) {
-      setErreur(err.message);
-      console.error('Erreur récupération détails:', err);
-      throw err;
-    } finally {
-      setChargement(prev => ({ ...prev, details: false }));
-    }
-  }, [api]);
-
-  const updateServiceStatus = useCallback(async (enService) => {
-    try {
-      setChargement(prev => ({ ...prev, service: true }));
-      setErreur(null);
-
-      const response = await api.put(`/livraisons/livreur/${livreurInfo?.utilisateur_id}/status`, { enService });
-      
-      if (response.data?.success) {
-        return true;
-      }
-      throw new Error(response.data?.message || 'Échec de la mise à jour du statut de service');
-    } catch (err) {
-      setErreur(err.message);
-      console.error('Erreur mise à jour statut service:', err);
-      return false;
-    } finally {
-      setChargement(prev => ({ ...prev, service: false }));
-    }
-  }, [api, livreurInfo]);
-
+  // Get statistics
   const obtenirStatistiques = useCallback(async () => {
     const data = await fetchData('/livraisons/mes-statistiques', 'statistiques');
     setStatistiques(data);
     return data;
   }, [fetchData]);
 
+  // Load initial data
   useEffect(() => {
-    if (livreurInfo?.utilisateur_id) {
-      Promise.all([
-        obtenirLivraisonsAujourdhui(),
-        obtenirStatistiques()
-      ]).catch(console.error);
-    }
-  }, [livreurInfo, obtenirLivraisonsAujourdhui, obtenirStatistiques]);
+    let isMounted = true;
+    const source = axios.CancelToken.source();
+    activeRequests.current.add(source);
+
+    const loadData = async () => {
+      if (livreurInfo?.utilisateur_id && estAuthentifie) {
+        try {
+          const [todayDeliveries, stats] = await Promise.all([
+            obtenirLivraisonsAujourdhui(),
+            obtenirStatistiques()
+          ]);
+          
+          if (isMounted) {
+            setLivraisons(todayDeliveries);
+            setStatistiques(stats);
+          }
+        } catch (err) {
+          if (isMounted && !axios.isCancel(err)) {
+            console.error('Error loading initial data:', err);
+          }
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      isMounted = false;
+      source.cancel('Component unmounted');
+      activeRequests.current.delete(source);
+    };
+  }, [livreurInfo, obtenirLivraisonsAujourdhui, obtenirStatistiques, estAuthentifie]);
 
   return {
     livraisons,
@@ -234,17 +204,10 @@ export const useLivraisons = () => {
     statistiques,
     chargement,
     erreur,
-    
     obtenirLivraisonsDisponibles,
     obtenirLivraisonsAujourdhui,
     obtenirMesLivraisons,
     obtenirLivraisonsParDate,
-    obtenirLivraisonsParLivreur,
-    obtenirLivraisonParId,
-    
-    mettreAJourStatutLivraison,
-    updateServiceStatus,
-    
     obtenirStatistiques,
     refetch: obtenirLivraisonsAujourdhui
   };

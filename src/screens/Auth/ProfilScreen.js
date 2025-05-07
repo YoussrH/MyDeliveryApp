@@ -17,11 +17,13 @@ import Button from '@/components/Button';
 import axios from 'axios';
 
 const ProfilScreen = ({ navigation }) => {
-  const { utilisateur, deconnexion } = useAuth();
-
+  const { utilisateur, deconnexion, api } = useAuth();
+  const [profileData, setProfileData] = useState(null);
+  const [loading, setLoading] = useState(true)
+  
   const [edition, setEdition] = useState(false);
   const [updating, setUpdating] = useState(false);
-  const [profileData, setProfileData] = useState(null);
+  
   const [formData, setFormData] = useState({
     utilisateur: {
       prenom: '',
@@ -35,29 +37,29 @@ const ProfilScreen = ({ navigation }) => {
   });
 
   useEffect(() => {
+    const source = axios.CancelToken.source();
+
     const fetchProfile = async () => {
       try {
-        const res = await axios.get('http://192.168.243.91:5000/livreur/mon-profil');
-        const data = res.data.livreur;
-        setProfileData(data);
-        setFormData({
-          utilisateur: {
-            prenom: data.utilisateur.prenom || '',
-            nom: data.utilisateur.nom || '',
-            email: data.utilisateur.email || ''
-          },
-          telephone: data.telephone || '',
-          statut: data.statut === 'actif',
-          type_vehicule: data.type_vehicule || '',
-          plaque_immatriculation: data.plaque_immatriculation || ''
+        const response = await api.get('/livreur/mon-profil', {
+          cancelToken: source.token
         });
+        setProfileData(response.data.livreur);
       } catch (err) {
-        console.error(err);
-        Alert.alert('Erreur', "Impossible de charger les données du profil.");
+        if (!axios.isCancel(err)) {
+          console.error(err);
+          Alert.alert('Erreur', "Impossible de charger les données du profil.");
+        }
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchProfile();
+
+    return () => {
+      source.cancel('Component unmounted');
+    };
   }, []);
 
   const toggleEdition = () => setEdition(!edition);
@@ -80,7 +82,7 @@ const ProfilScreen = ({ navigation }) => {
   const soumettreModifications = async () => {
     setUpdating(true);
     try {
-      await axios.put('http://192.168.243.91:5000/livreur/mettre-a-jour', {
+      await axios.put('http://192.168.1.16:5000/livreur/mettre-a-jour', {
         ...formData,
         statut: formData.statut ? 'actif' : 'inactif'
       });
@@ -101,17 +103,25 @@ const ProfilScreen = ({ navigation }) => {
     ]);
   };
 
-  const handleChangementMotDePasse = () => {
-    navigation.navigate('ChangerMotDePasse');
-  };
-
-  if (!profileData) {
+  if (loading) {
     return (
       <View style={tw`items-center justify-center flex-1 bg-slate-50`}>
         <ActivityIndicator size="large" color={tw.color('violet-600')} />
       </View>
     );
   }
+
+  const handleChangementMotDePasse = () => {
+    navigation.navigate('ChangerMotDePasse');
+  };
+
+/*   if (!profileData) {
+    return (
+      <View style={tw`items-center justify-center flex-1 bg-slate-50`}>
+        <ActivityIndicator size="large" color={tw.color('violet-600')} />
+      </View>
+    );
+  } */
 
   return (
     <ScrollView style={tw`flex-1 bg-slate-50`} contentContainerStyle={tw`p-4`}>

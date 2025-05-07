@@ -9,7 +9,7 @@ import tw from "@/utils/tw";
 import SplashScreen from "@/screens/Acceuil/SplashScreen";
 import ConnexionScreen from "@/screens/Auth/ConnexionScreen";
 import AccueilScreen from "@/screens/Acceuil/AccueilScreen";
-import CommandesScreen from "@/screens/Commande/CommandesScreen";
+import LivraisonsScreen  from "@/screens/Commande/LivraisonsScreen";
 import ScannerScreen from "@/screens/ScannerScreen";
 import NotificationsScreen from "@/screens/NotificationsScreen";
 import DetailCommandeScreen from "@/screens/Commande/DetailCommandeScreen";
@@ -62,7 +62,7 @@ const TabNavigator = () => {
       />
       <Tab.Screen
         name="Colis"
-        component={CommandesScreen}
+        component={LivraisonsScreen }
         options={{
           tabBarIcon: ({ color, size, focused }) => (
             <MaterialCommunityIcons 
@@ -181,11 +181,11 @@ const AppNavigator = () => {
         <>
           <Stack.Screen name="App" component={TabNavigator} />
           <Stack.Screen 
-            name="Commandes" 
-            component={CommandesScreen}
+            name="Livraisons" 
+            component={LivraisonsScreen }
             options={{
               headerShown: true,
-              title: "Commandes",
+              title: "Livraisons",
               headerTitleStyle: tw`font-mono text-lg font-semibold text-slate-800`,
               headerBackTitleVisible: false,
               headerTintColor: tw.color("text-violet-600"),

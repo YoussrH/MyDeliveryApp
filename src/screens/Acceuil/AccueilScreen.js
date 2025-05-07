@@ -105,7 +105,7 @@ const AccueilScreen = () => {
 
   if (chargement.livraisons && !refreshing) {
     return (
-      <View style={tw`flex-1 justify-center items-center`}>
+      <View style={tw`items-center justify-center flex-1`}>
         <ActivityIndicator size="large" color={tw.color("violet-600")} />
       </View>
     );
@@ -113,7 +113,7 @@ const AccueilScreen = () => {
 
   return (
     <ScrollView 
-      style={tw`flex-1 bg-slate-50 mt-10 p-4`} 
+      style={tw`flex-1 p-4 mt-10 bg-slate-50`} 
       showsVerticalScrollIndicator={false}
       refreshControl={
         <RefreshControl 
@@ -123,12 +123,12 @@ const AccueilScreen = () => {
       }
     >
       {/* Header */}
-      <View style={tw`flex-row justify-between items-center mb-6`}>
+      <View style={tw`flex-row items-center justify-between mb-6`}>
         <View>
           <Text style={tw`text-2xl font-bold text-slate-800`}>
             Bonjour, {utilisateur?.prenom || "Livreur"}
           </Text>
-          <Text style={tw`text-sm text-slate-500 mt-1`}>
+          <Text style={tw`mt-1 text-sm text-slate-500`}>
             {new Date().toLocaleDateString("fr-FR", { 
               weekday: "long", 
               day: "numeric", 
@@ -139,7 +139,7 @@ const AccueilScreen = () => {
       </View>
 
       {/* Search Bar */}
-      <View style={tw`mb-4 bg-white p-2 rounded-lg flex-row items-center`}>
+      <View style={tw`flex-row items-center p-2 mb-4 bg-white rounded-lg`}>
         <Feather 
           name="search" 
           size={20} 
@@ -161,14 +161,14 @@ const AccueilScreen = () => {
 
       {/* Error Message */}
       {erreur && (
-        <View style={tw`bg-red-100 p-3 rounded-lg mb-4`}>
+        <View style={tw`p-3 mb-4 bg-red-100 rounded-lg`}>
           <Text style={tw`text-red-600`}>{erreur}</Text>
         </View>
       )}
 
       {/* Stats Card */}
-      <View style={tw`bg-white p-4 rounded-xl shadow-sm mb-6`}>
-        <View style={tw`flex-row justify-between items-center mb-4`}>
+      <View style={tw`p-4 mb-6 bg-white shadow-sm rounded-xl`}>
+        <View style={tw`flex-row items-center justify-between mb-4`}>
           <Text style={tw`text-lg font-semibold text-slate-800`}>Statistiques</Text>
         </View>
         <View style={tw`flex-row justify-between`}>
@@ -176,22 +176,22 @@ const AccueilScreen = () => {
             <Text style={tw`text-2xl font-bold text-slate-800`}>
               {statistiques?.livraisonsDuJour?.total || 0}
             </Text>
-            <Text style={tw`text-sm text-slate-500 mt-1`}>Aujourd'hui</Text>
+            <Text style={tw`mt-1 text-sm text-slate-500`}>Aujourd'hui</Text>
           </View>
           <View style={tw`items-center flex-1`}>
             <Text style={tw`text-2xl font-bold text-emerald-500`}>
               {statistiques?.livraisonsDuJour?.completees || 0}
             </Text>
-            <Text style={tw`text-sm text-slate-500 mt-1`}>Complétées</Text>
+            <Text style={tw`mt-1 text-sm text-slate-500`}>Complétées</Text>
           </View>
           <View style={tw`items-center flex-1`}>
             <Text style={tw`text-2xl font-bold text-amber-500`}>
               {statistiques?.enCours || 0}
             </Text>
-            <Text style={tw`text-sm text-slate-500 mt-1`}>En cours</Text>
+            <Text style={tw`mt-1 text-sm text-slate-500`}>En cours</Text>
           </View>
         </View>
-        <View style={tw`mt-4 pt-4 border-t border-slate-200`}>
+        <View style={tw`pt-4 mt-4 border-t border-slate-200`}>
           <Text style={tw`text-sm text-slate-500`}>
             Ce mois: {statistiques?.colisLivresCeMois || 0} colis livrés
           </Text>
@@ -200,13 +200,15 @@ const AccueilScreen = () => {
 
       {/* Current Deliveries */}
       <View style={tw`mb-6`}>
-        <View style={tw`flex-row justify-between items-center mb-4`}>
+        <View style={tw`flex-row items-center justify-between mb-4`}>
           <Text style={tw`text-lg font-semibold text-slate-800`}>
             Mes livraisons
           </Text>
           {filteredDeliveries.length > 0 && (
-            <TouchableOpacity onPress={() => navigation.navigate("Commandes")}>
-              <Text style={tw`text-violet-600 text-sm font-medium`}>Voir tout</Text>
+            <TouchableOpacity 
+              onPress={() => navigation.navigate("Livraisons", { fromAccueil: true })}
+            >
+              <Text style={tw`text-sm font-medium text-violet-600`}>Voir tout</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -218,13 +220,13 @@ const AccueilScreen = () => {
               activeOpacity={0.7}
               onPress={() => navigation.navigate("DetailCommande", { livraisonId: delivery.livraison_id })}
             >
-              <View style={tw`bg-white p-4 rounded-xl shadow-sm mb-3`}>
-                <View style={tw`flex-row justify-between items-center mb-3`}>
+              <View style={tw`p-4 mb-3 bg-white shadow-sm rounded-xl`}>
+                <View style={tw`flex-row items-center justify-between mb-3`}>
                   <View>
                     <Text style={tw`text-base font-semibold text-slate-800`}>
                       {delivery.client_nom}
                     </Text>
-                    <Text style={tw`text-sm text-slate-500 mt-1`}>
+                    <Text style={tw`mt-1 text-sm text-slate-500`}>
                       {new Date(delivery.date_creation).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} • {delivery.reference}
                     </Text>
                   </View>
@@ -237,7 +239,7 @@ const AccueilScreen = () => {
                     size={16} 
                     color={tw.color("text-slate-500")} 
                   />
-                  <Text style={tw`text-sm text-slate-600 ml-2 flex-1`}>
+                  <Text style={tw`flex-1 ml-2 text-sm text-slate-600`}>
                     {delivery.adresse_livraison}
                   </Text>
                 </View>
@@ -249,7 +251,7 @@ const AccueilScreen = () => {
                       size={16} 
                       color={tw.color("text-slate-500")} 
                     />
-                    <Text style={tw`text-sm text-slate-600 ml-2 flex-1`}>
+                    <Text style={tw`flex-1 ml-2 text-sm text-slate-600`}>
                       Colis: {delivery.colis[0].numero_suivi || 'Non disponible'}
                     </Text>
                   </View>
@@ -258,7 +260,7 @@ const AccueilScreen = () => {
             </TouchableOpacity>
           ))
         ) : (
-          <View style={tw`bg-white p-6 rounded-xl shadow-sm items-center justify-center`}>
+          <View style={tw`items-center justify-center p-6 bg-white shadow-sm rounded-xl`}>
             {searchQuery ? (
               <Text style={tw`text-slate-500`}>Aucun résultat pour "{searchQuery}"</Text>
             ) : (
@@ -270,7 +272,7 @@ const AccueilScreen = () => {
 
       {/* Quick Actions */}
       <View style={tw`mb-6`}>
-        <Text style={tw`text-lg font-semibold text-slate-800 mb-4`}>
+        <Text style={tw`mb-4 text-lg font-semibold text-slate-800`}>
           Actions rapides
         </Text>
         <View style={tw`flex-row justify-between`}>
@@ -278,7 +280,7 @@ const AccueilScreen = () => {
             style={tw`items-center w-1/3`}
             onPress={handleScanPress}
           >
-            <View style={tw`w-14 h-14 bg-violet-100 rounded-xl justify-center items-center mb-2`}>
+            <View style={tw`items-center justify-center mb-2 w-14 h-14 bg-violet-100 rounded-xl`}>
               <MaterialCommunityIcons 
                 name="qrcode-scan" 
                 size={24} 
@@ -290,23 +292,23 @@ const AccueilScreen = () => {
 
           <TouchableOpacity 
             style={tw`items-center w-1/3`}
-            onPress={() => navigation.navigate("Commandes")}
+            onPress={() => navigation.navigate("Livraisons", { fromAccueil: true })}
           >
-            <View style={tw`w-14 h-14 bg-blue-100 rounded-xl justify-center items-center mb-2`}>
+            <View style={tw`items-center justify-center mb-2 bg-blue-100 w-14 h-14 rounded-xl`}>
               <MaterialCommunityIcons 
                 name="package-variant" 
                 size={24} 
                 color={tw.color("text-blue-500")} 
               />
             </View>
-            <Text style={tw`text-sm text-slate-800`}>Commandes</Text>
+            <Text style={tw`text-sm text-slate-800`}>Livraisons</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
             style={tw`items-center w-1/3`}
             onPress={() => navigation.navigate("Statistiques")}
           >
-            <View style={tw`w-14 h-14 bg-pink-100 rounded-xl justify-center items-center mb-2`}>
+            <View style={tw`items-center justify-center mb-2 bg-pink-100 w-14 h-14 rounded-xl`}>
               <Ionicons 
                 name="stats-chart" 
                 size={24} 

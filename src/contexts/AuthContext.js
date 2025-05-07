@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
@@ -10,9 +10,10 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState(null);
+  
+  const baseURL = 'http://192.168.1.16:5000';
+  const initialized = useRef(false);
 
-  const baseURL = 'http://192.168.243.91:5000'; // Update with your backend URL
-  // http://192.168.1.16:5000
   // Create axios instance
   const api = axios.create({
     baseURL,
@@ -23,9 +24,16 @@ export const AuthProvider = ({ children }) => {
     }
   });
 
-  // Request interceptor to add auth token
+  // Track active requests
+  const activeRequests = useRef(new Set());
+
+  // Request interceptor
   api.interceptors.request.use(
     async (config) => {
+      const source = axios.CancelToken.source();
+      activeRequests.current.add(source);
+      config.cancelToken = source.token;
+
       const storedToken = await SecureStore.getItemAsync('authToken');
       if (storedToken) {
         config.headers.Authorization = `Bearer ${storedToken}`;
@@ -37,16 +45,43 @@ export const AuthProvider = ({ children }) => {
     }
   );
 
-  // Response interceptor to handle 401 errors
-  api.interceptors.response.use(
-    response => response,
-    async (error) => {
-      if (error.response?.status === 401) {
-        await deconnexionSilencieuse();
-      }
+// Updated deconnexionSilencieuse function
+const deconnexionSilencieuse = async () => {
+  try {
+    // Cancel all active requests with a specific message
+    activeRequests.current.forEach(source => {
+      source.cancel('User not authenticated (logged out)');
+    });
+    activeRequests.current.clear();
+
+    await SecureStore.deleteItemAsync('authToken');
+    setUtilisateur(null);
+    setLivreurInfo(null);
+    setToken(null);
+    setErreur(null);
+  } catch (err) {
+    if (!axios.isCancel(err)) {
+      console.error('Silent logout error:', err);
+    }
+  }
+};
+
+// Updated response interceptor
+api.interceptors.response.use(
+  response => response,
+  async (error) => {
+    // Skip cancellation errors
+    if (axios.isCancel(error)) {
       return Promise.reject(error);
     }
-  );
+    
+    // Only handle 401 errors for authenticated requests
+    if (error.config?.headers?.Authorization && error.response?.status === 401) {
+      await deconnexionSilencieuse();
+    }
+    return Promise.reject(error);
+  }
+);
   const motDePasseOublie = async (email) => {
     try {
       const response = await api.post('/mot-de-passe/mot-de-passe-oublie', { email });
@@ -67,13 +102,13 @@ export const AuthProvider = ({ children }) => {
       };
     }
   };
+
   const verifierCodeReinitialisation = async (email, code) => {
     try {
       const response = await api.post('/mot-de-passe/verifier-code-reinitialisation', { email, code });
       
       console.log("[DEBUG] Verification API response:", response.data);
       
-      // Handle both "success" and "succes" for backward compatibility
       const isSuccess = response.data?.success || response.data?.succes;
       
       if (isSuccess) {
@@ -121,7 +156,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-
   const reinitialiserMotDePasse = async (email, code, nouveauMotDePasse, token) => {
     try {
       console.log("[DEBUG] Making reset request with token:", token);
@@ -154,6 +188,7 @@ export const AuthProvider = ({ children }) => {
       };
     }
   };
+
   // Fetch livreur profile
   const obtenirInfoLivreur = useCallback(async () => {
     try {
@@ -190,7 +225,6 @@ export const AuthProvider = ({ children }) => {
         setToken(storedToken);
         setUtilisateur(response.data.utilisateur);
         
-        // If user is a delivery person, fetch their profile
         if (response.data.utilisateur.role === 'livreur') {
           await obtenirInfoLivreur();
         }
@@ -198,23 +232,30 @@ export const AuthProvider = ({ children }) => {
         await deconnexionSilencieuse();
       }
     } catch (err) {
-      console.error('Verification error:', err);
-      await deconnexionSilencieuse();
-      setErreur(err.response?.data?.message || 'Session expirée');
+      if (!axios.isCancel(err)) {
+        console.error('Verification error:', err);
+        await deconnexionSilencieuse();
+        // Only set error if we had a token (meaning we expected to be authenticated)
+        if (await SecureStore.getItemAsync('authToken')) {
+          setErreur(err.response?.data?.message || 'Session expirée');
+        }
+      }
     } finally {
       setChargement(false);
     }
   }, []);
 
-  // Silent logout (no API call)
-  const deconnexionSilencieuse = async () => {
+
+
+  const deconnexion = async () => {
     try {
-      await SecureStore.deleteItemAsync('authToken');
-      setUtilisateur(null);
-      setLivreurInfo(null);
-      setToken(null);
+      await api.post('/auth/deconnexion');
     } catch (err) {
-      console.error('Silent logout error:', err);
+      if (!axios.isCancel(err)) {
+        console.error('Logout API error:', err);
+      }
+    } finally {
+      await deconnexionSilencieuse();
     }
   };
 
@@ -263,24 +304,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Full logout (with API call)
-  const deconnexion = async () => {
-    try {
-      await api.post('/auth/deconnexion');
-    } catch (err) {
-      console.error('Logout API error:', err);
-    } finally {
-      await deconnexionSilencieuse();
-    }
-  };
-
   // Initialize auth state on mount
   useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+
     const initializeAuth = async () => {
       try {
         const storedToken = await SecureStore.getItemAsync('authToken');
         if (storedToken) {
           setToken(storedToken);
+          await verifierAuthentification();
         }
       } catch (err) {
         console.error('Initialization error:', err);
@@ -290,14 +324,15 @@ export const AuthProvider = ({ children }) => {
     };
 
     initializeAuth();
-  }, []);
 
-  // Verify auth when token changes
-  useEffect(() => {
-    if (token) {
-      verifierAuthentification();
-    }
-  }, [token, verifierAuthentification]);
+    return () => {
+      // Cleanup on unmount
+      activeRequests.current.forEach(source => {
+        source.cancel('Component unmounted');
+      });
+      activeRequests.current.clear();
+    };
+  }, []);
 
   return (
     <AuthContext.Provider

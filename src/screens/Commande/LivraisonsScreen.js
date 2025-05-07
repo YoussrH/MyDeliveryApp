@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect, useCallback } from "react"
 import { View, Text, TouchableOpacity, Modal, SectionList, ActivityIndicator } from "react-native"
-import { useNavigation } from "@react-navigation/native"
+import { useNavigation, useRoute } from "@react-navigation/native"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import Badge from "@/components/Badge"
 import tw from "@/utils/tw"
@@ -69,8 +69,9 @@ const statusFilters = [
   { id: "echecs", label: "Échecs" }
 ]
 
-const CommandesScreen = () => {
+const LivraisonsScreen  = () => {
   const navigation = useNavigation()
+  const route = useRoute()
   const [filtreStatut, setFiltreStatut] = useState("toutes")
   const [dateSelectionnee, setDateSelectionnee] = useState(new Date())
   const [tempDate, setTempDate] = useState(new Date())
@@ -82,6 +83,9 @@ const CommandesScreen = () => {
     erreur,
     obtenirLivraisonsParDate
   } = useLivraisons()
+
+  // Check if coming from Accueil screen
+  const fromAccueil = route.params?.fromAccueil
 
   const chargerLivraisons = useCallback(async (date) => {
     try {
@@ -142,13 +146,13 @@ const CommandesScreen = () => {
       activeOpacity={0.7}
       style={tw`mb-3`}
     >
-      <View style={tw`bg-white p-4 rounded-xl shadow-sm`}>
-        <View style={tw`flex-row justify-between items-center mb-3`}>
+      <View style={tw`p-4 bg-white shadow-sm rounded-xl`}>
+        <View style={tw`flex-row items-center justify-between mb-3`}>
           <View>
             <Text style={tw`text-base font-semibold text-slate-800`}>
               {item.client_nom || "Client inconnu"}
             </Text>
-            <Text style={tw`text-xs text-slate-500 mt-1`}>
+            <Text style={tw`mt-1 text-xs text-slate-500`}>
               Réf: {item.reference || "N/A"} • {formatShortDate(item.displayDate)}
             </Text>
           </View>
@@ -161,7 +165,7 @@ const CommandesScreen = () => {
             size={16} 
             color={tw.color("text-slate-500")} 
           />
-          <Text style={tw`text-sm text-slate-600 ml-2 flex-1`}>
+          <Text style={tw`flex-1 ml-2 text-sm text-slate-600`}>
             {item.adresse_livraison || "Adresse non spécifiée"}
           </Text>
         </View>
@@ -172,7 +176,7 @@ const CommandesScreen = () => {
             size={16} 
             color={tw.color("text-slate-500")} 
           />
-          <Text style={tw`text-sm text-slate-600 ml-2 flex-1`} numberOfLines={1}>
+          <Text style={tw`flex-1 ml-2 text-sm text-slate-600`} numberOfLines={1}>
             {item.colis?.map(colis => colis.numero_suivi).join(", ") || "Aucun détail de colis"}
           </Text>
         </View>
@@ -181,7 +185,7 @@ const CommandesScreen = () => {
   )
 
   const renderSectionHeader = ({ section: { title } }) => (
-    <View style={tw`bg-slate-100 py-2 px-4 rounded-lg mb-2 mt-4`}>
+    <View style={tw`px-4 py-2 mt-4 mb-2 rounded-lg bg-slate-100`}>
       <Text style={tw`font-bold text-slate-700`}>{title}</Text>
     </View>
   )
@@ -190,12 +194,12 @@ const CommandesScreen = () => {
   const groupedLivraisons = groupByDate(filteredLivraisons)
 
   return (
-    <View style={tw`flex-1 bg-slate-50 p-4 mt-10`}>
+    <View style={tw`flex-1 bg-slate-50 p-4 ${fromAccueil ? '' : 'mt-10'}`}>
       {/* Header */}
-      <View style={tw`flex-row justify-between items-center mb-4`}>
+      <View style={tw`flex-row items-center justify-between mb-4`}>
         <Text style={tw`text-2xl font-bold text-slate-800`}>Colis</Text>
         <TouchableOpacity
-          style={tw`flex-row items-center bg-white py-2 px-3 rounded-lg border border-slate-200`}
+          style={tw`flex-row items-center px-3 py-2 bg-white border rounded-lg border-slate-200`}
           onPress={() => {
             setTempDate(dateSelectionnee)
             setShowDatePicker(true)
@@ -206,7 +210,7 @@ const CommandesScreen = () => {
             size={16} 
             color={tw.color("text-violet-600")} 
           />
-          <Text style={tw`text-violet-600 ml-2`}>
+          <Text style={tw`ml-2 text-violet-600`}>
             {formatShortDate(dateSelectionnee)}
           </Text>
         </TouchableOpacity>
@@ -214,13 +218,13 @@ const CommandesScreen = () => {
 
       {/* Status Filter */}
       <View style={tw`mb-4`}>
-        <Text style={tw`text-sm font-medium text-slate-600 mb-2`}>Filtrer par statut:</Text>
+        <Text style={tw`mb-2 text-sm font-medium text-slate-600`}>Filtrer par statut:</Text>
         <View style={tw`flex-row flex-wrap gap-2`}>
           {statusFilters.map((filter) => (
             <TouchableOpacity
               key={filter.id}
               style={[
-                tw`py-2 px-3 rounded-full bg-slate-200`,
+                tw`px-3 py-2 rounded-full bg-slate-200`,
                 filtreStatut === filter.id && tw`bg-violet-600`
               ]}
               onPress={() => setFiltreStatut(filter.id)}
@@ -243,9 +247,9 @@ const CommandesScreen = () => {
         animationType="fade"
         onRequestClose={() => setShowDatePicker(false)}
       >
-        <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50 p-4`}>
-          <View style={tw`bg-white p-6 rounded-xl w-full max-w-md`}>
-            <Text style={tw`text-lg font-bold mb-4 text-center`}>
+        <View style={tw`items-center justify-center flex-1 p-4 bg-black bg-opacity-50`}>
+          <View style={tw`w-full max-w-md p-6 bg-white rounded-xl`}>
+            <Text style={tw`mb-4 text-lg font-bold text-center`}>
               Choisir une date
             </Text>
             <DatePicker
@@ -257,20 +261,20 @@ const CommandesScreen = () => {
             />
             <View style={tw`flex-row justify-center gap-4 mt-4`}>
               <TouchableOpacity
-                style={tw`bg-slate-200 py-2 px-6 rounded-full`}
+                style={tw`px-6 py-2 rounded-full bg-slate-200`}
                 onPress={() => setShowDatePicker(false)}
               >
-                <Text style={tw`text-slate-700 font-medium`}>Annuler</Text>
+                <Text style={tw`font-medium text-slate-700`}>Annuler</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={tw`bg-violet-600 py-2 px-6 rounded-full`}
+                style={tw`px-6 py-2 rounded-full bg-violet-600`}
                 onPress={() => {
                   setDateSelectionnee(tempDate)
                   setShowDatePicker(false)
                   chargerLivraisons(tempDate)
                 }}
               >
-                <Text style={tw`text-white font-medium`}>Valider</Text>
+                <Text style={tw`font-medium text-white`}>Valider</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -279,18 +283,18 @@ const CommandesScreen = () => {
 
       {/* Content */}
       {chargement.livraisons ? (
-        <View style={tw`flex-1 items-center justify-center`}>
+        <View style={tw`items-center justify-center flex-1`}>
           <ActivityIndicator size="large" color={tw.color("text-violet-600")} />
-          <Text style={tw`text-slate-500 mt-2`}>Chargement des livraisons...</Text>
+          <Text style={tw`mt-2 text-slate-500`}>Chargement des livraisons...</Text>
         </View>
       ) : erreur ? (
-        <View style={tw`bg-white p-6 rounded-xl shadow-sm items-center justify-center`}>
+        <View style={tw`items-center justify-center p-6 bg-white shadow-sm rounded-xl`}>
           <Text style={tw`text-red-500`}>Erreur: {erreur}</Text>
           <TouchableOpacity
-            style={tw`mt-4 bg-violet-600 py-2 px-4 rounded-full`}
+            style={tw`px-4 py-2 mt-4 rounded-full bg-violet-600`}
             onPress={chargerLivraisons}
           >
-            <Text style={tw`text-white font-medium`}>Réessayer</Text>
+            <Text style={tw`font-medium text-white`}>Réessayer</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -301,17 +305,17 @@ const CommandesScreen = () => {
           keyExtractor={(item) => item.livraison_id}
           contentContainerStyle={tw`pb-4`}
           ListEmptyComponent={
-            <View style={tw`bg-white p-6 rounded-xl shadow-sm items-center justify-center mt-4`}>
+            <View style={tw`items-center justify-center p-6 mt-4 bg-white shadow-sm rounded-xl`}>
               <Text style={tw`text-slate-500`}>
                 {filtreStatut === "toutes" 
                   ? "Aucune livraison trouvée pour cette date" 
                   : `Aucune livraison ${statusFilters.find(f => f.id === filtreStatut)?.label.toLowerCase()} trouvée`}
               </Text>
               <TouchableOpacity
-                style={tw`mt-4 bg-violet-600 py-2 px-4 rounded-full`}
+                style={tw`px-4 py-2 mt-4 rounded-full bg-violet-600`}
                 onPress={chargerLivraisons}
               >
-                <Text style={tw`text-white font-medium`}>Rafraîchir</Text>
+                <Text style={tw`font-medium text-white`}>Rafraîchir</Text>
               </TouchableOpacity>
             </View>
           }
@@ -325,4 +329,4 @@ const CommandesScreen = () => {
   )
 }
 
-export default CommandesScreen
+export default LivraisonsScreen 
