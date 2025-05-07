@@ -122,15 +122,16 @@ export const useLivraisons = () => {
     return data;
   }, [fetchData]);
 
-  const mettreAJourStatutLivraison = useCallback(async (livraisonId, nouveauStatut) => {
+ 
+  const mettreAJourStatutLivraison = useCallback(async (commandeId, nouveauStatut) => {
     const previousLivraisons = [...livraisons];
     try {
       setChargement(prev => ({ ...prev, statut: true }));
       setErreur(null);
-
+  
       // Optimistic update
       setLivraisons(prev => prev.map(liv => 
-        liv.livraison_id === livraisonId 
+        liv.id === commandeId 
           ? { 
               ...liv, 
               statut: nouveauStatut,
@@ -142,10 +143,19 @@ export const useLivraisons = () => {
             } 
           : liv
       ));
-
-      const response = await api.put(`/livraisons/${livraisonId}/statut`, { statut: nouveauStatut });
+  
+      // Updated API call to match backend
+      const response = await api.put(`/livraisons/${commandeId}/statut`, { 
+        statut: nouveauStatut,
+        livreur_id: livreurInfo?.utilisateur_id 
+      });
       
       if (response.data?.success) {
+        // If successful, update with the actual response data
+        const updatedLivraison = response.data.data;
+        setLivraisons(prev => prev.map(liv => 
+          liv.id === commandeId ? updatedLivraison : liv
+        ));
         return true;
       }
       
@@ -159,7 +169,7 @@ export const useLivraisons = () => {
     } finally {
       setChargement(prev => ({ ...prev, statut: false }));
     }
-  }, [api, livraisons]);
+  }, [api, livraisons, livreurInfo]);
 
   const obtenirLivraisonParId = useCallback(async (id) => {
     try {

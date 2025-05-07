@@ -11,8 +11,8 @@ export const AuthProvider = ({ children }) => {
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState(null);
 
-  const baseURL = 'http://192.168.1.16:5000'; // Update with your backend URL
-  
+  const baseURL = 'http://192.168.243.91:5000'; // Update with your backend URL
+  // http://192.168.1.16:5000
   // Create axios instance
   const api = axios.create({
     baseURL,

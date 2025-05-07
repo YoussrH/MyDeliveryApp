@@ -28,7 +28,7 @@ const ScanButton = ({ children, onPress }) => {
       onPress={onPress} 
       activeOpacity={0.9}
     >
-      <View style={tw`w-14 h-14 rounded-full bg-violet-600 justify-center items-center shadow-lg shadow-violet-600/30`}>
+      <View style={tw`items-center justify-center rounded-full shadow-lg w-14 h-14 bg-violet-600 shadow-violet-600/30`}>
         {children}
       </View>
     </TouchableOpacity>
@@ -39,12 +39,12 @@ const TabNavigator = () => {
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarStyle: tw`h-16 border-t-0 bg-white shadow-md`,
+        tabBarStyle: tw`h-16 bg-white border-t-0 shadow-md`,
         tabBarActiveTintColor: tw.color("text-violet-600"),
         tabBarInactiveTintColor: tw.color("text-slate-500"),
         tabBarShowLabel: true,
         headerShown: false,
-        tabBarLabelStyle: tw`text-xs font-medium pb-1`,
+        tabBarLabelStyle: tw`pb-1 text-xs font-medium`,
       }}
     >
       <Tab.Screen
@@ -61,7 +61,7 @@ const TabNavigator = () => {
         }}
       />
       <Tab.Screen
-        name="Commandes"
+        name="Colis"
         component={CommandesScreen}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
@@ -96,7 +96,7 @@ const TabNavigator = () => {
             />
           ),
           tabBarBadge: 3,
-          tabBarBadgeStyle: tw`bg-violet-600 text-white`,
+          tabBarBadgeStyle: tw`text-white bg-violet-600`,
         }}
       />
       <Tab.Screen
@@ -129,7 +129,7 @@ const AuthStack = () => (
       options={{
         headerShown: true,
         title: "Mot de passe oublié",
-        headerTitleStyle: tw`font-mono  text-lg font-semibold text-slate-800`,
+        headerTitleStyle: tw`font-mono text-lg font-semibold text-slate-800`,
         headerBackTitleVisible: false,
         headerTintColor: tw.color("text-violet-600"),
         headerStyle: tw`bg-white border-b border-slate-200`,
@@ -141,7 +141,7 @@ const AuthStack = () => (
       options={{
         headerShown: true,
         title: "Vérification",
-        headerTitleStyle: tw` font-mono text-lg font-semibold text-slate-800`,
+        headerTitleStyle: tw`font-mono text-lg font-semibold text-slate-800`,
         headerBackTitleVisible: false,
         headerTintColor: tw.color("text-violet-600"),
         headerStyle: tw`bg-white border-b border-slate-200`,
@@ -153,7 +153,7 @@ const AuthStack = () => (
       options={{
         headerShown: true,
         title: "Réinitialisation",
-        headerTitleStyle: tw` font-mono text-lg font-semibold text-slate-800`,
+        headerTitleStyle: tw`font-mono text-lg font-semibold text-slate-800`,
         headerBackTitleVisible: false,
         headerTintColor: tw.color("text-violet-600"),
         headerStyle: tw`bg-white border-b border-slate-200`,
@@ -167,9 +167,9 @@ const AppNavigator = () => {
 
   if (chargement) {
     return (
-      <View style={tw`flex-1 justify-center items-center bg-white`}>
+      <View style={tw`items-center justify-center flex-1 bg-white`}>
         <ActivityIndicator size="large" color={tw.color("violet-600")} />
-        <Text style={tw`mt-4 font-mono  text-slate-500`}>Chargement...</Text>
+        <Text style={tw`mt-4 font-mono text-slate-500`}>Chargement...</Text>
       </View>
     );
   }
@@ -186,7 +186,7 @@ const AppNavigator = () => {
             options={{
               headerShown: true,
               title: "Commandes",
-              headerTitleStyle: tw` font-mono text-lg font-semibold text-slate-800`,
+              headerTitleStyle: tw`font-mono text-lg font-semibold text-slate-800`,
               headerBackTitleVisible: false,
               headerTintColor: tw.color("text-violet-600"),
               headerStyle: tw`bg-white border-b border-slate-200`,
@@ -198,7 +198,7 @@ const AppNavigator = () => {
             options={{
               headerShown: true,
               title: "Détails de commande",
-              headerTitleStyle: tw` font-mono  text-lg font-semibold text-slate-800`,
+              headerTitleStyle: tw`font-mono text-lg font-semibold text-slate-800`,
               headerBackTitleVisible: false,
               headerTintColor: tw.color("text-violet-600"),
               headerStyle: tw`bg-white border-b border-slate-200`,
@@ -210,7 +210,7 @@ const AppNavigator = () => {
             options={{
               headerShown: true,
               title: "Changer mot de passe",
-              headerTitleStyle: tw` font-mono text-lg font-semibold text-slate-800`,
+              headerTitleStyle: tw`font-mono text-lg font-semibold text-slate-800`,
               headerBackTitleVisible: false,
               headerTintColor: tw.color("text-violet-600"),
               headerStyle: tw`bg-white border-b border-slate-200`,

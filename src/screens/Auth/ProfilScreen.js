@@ -37,7 +37,7 @@ const ProfilScreen = ({ navigation }) => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await axios.get('http://192.168.1.16:5000/livreur/mon-profil');
+        const res = await axios.get('http://192.168.243.91:5000/livreur/mon-profil');
         const data = res.data.livreur;
         setProfileData(data);
         setFormData({
@@ -80,7 +80,7 @@ const ProfilScreen = ({ navigation }) => {
   const soumettreModifications = async () => {
     setUpdating(true);
     try {
-      await axios.put('http://192.168.1.16:5000/livreur/mettre-a-jour', {
+      await axios.put('http://192.168.243.91:5000/livreur/mettre-a-jour', {
         ...formData,
         statut: formData.statut ? 'actif' : 'inactif'
       });
@@ -107,7 +107,7 @@ const ProfilScreen = ({ navigation }) => {
 
   if (!profileData) {
     return (
-      <View style={tw`flex-1 justify-center items-center bg-slate-50`}>
+      <View style={tw`items-center justify-center flex-1 bg-slate-50`}>
         <ActivityIndicator size="large" color={tw.color('violet-600')} />
       </View>
     );
@@ -116,20 +116,20 @@ const ProfilScreen = ({ navigation }) => {
   return (
     <ScrollView style={tw`flex-1 bg-slate-50`} contentContainerStyle={tw`p-4`}>
       <View style={tw`items-center mb-6`}>
-        <View style={tw`w-24 h-24 rounded-full bg-violet-100 justify-center items-center mb-4`}>
+        <View style={tw`items-center justify-center w-24 h-24 mb-4 rounded-full bg-violet-100`}>
           <Ionicons name="person" size={48} color={tw.color('text-violet-600')} />
         </View>
 
         {edition ? (
           <>
             <TextInput
-              style={tw`text-xl font-bold text-slate-800 mb-1 w-full text-center`}
+              style={tw`w-full mb-1 text-xl font-bold text-center text-slate-800`}
               value={formData.utilisateur.prenom}
               onChangeText={(text) => handleChange('utilisateur.prenom', text)}
               placeholder="Prénom"
             />
             <TextInput
-              style={tw`text-xl font-bold text-slate-800 w-full text-center`}
+              style={tw`w-full text-xl font-bold text-center text-slate-800`}
               value={formData.utilisateur.nom}
               onChangeText={(text) => handleChange('utilisateur.nom', text)}
               placeholder="Nom"
@@ -143,7 +143,7 @@ const ProfilScreen = ({ navigation }) => {
 
         {edition ? (
           <TextInput
-            style={tw`text-slate-500 w-full text-center`}
+            style={tw`w-full text-center text-slate-500`}
             value={formData.utilisateur.email}
             onChangeText={(text) => handleChange('utilisateur.email', text)}
             placeholder="Email"
@@ -154,15 +154,15 @@ const ProfilScreen = ({ navigation }) => {
         )}
 
         {utilisateur?.role === 'livreur' && (
-          <View style={tw`mt-2 bg-violet-100 px-3 py-1 rounded-full`}>
-            <Text style={tw`text-violet-700 text-sm font-medium`}>Livreur</Text>
+          <View style={tw`px-3 py-1 mt-2 rounded-full bg-violet-100`}>
+            <Text style={tw`text-sm font-medium text-violet-700`}>Livreur</Text>
           </View>
         )}
       </View>
 
       {/* Bloc Informations */}
-      <View style={tw`bg-white rounded-lg shadow-sm p-4 mb-4`}>
-        <View style={tw`flex-row justify-between items-center mb-3`}>
+      <View style={tw`p-4 mb-4 bg-white rounded-lg shadow-sm`}>
+        <View style={tw`flex-row items-center justify-between mb-3`}>
           <Text style={tw`text-lg font-semibold text-slate-800`}>Informations</Text>
           {utilisateur?.role === 'livreur' && (
             <TouchableOpacity onPress={toggleEdition}>
@@ -175,7 +175,7 @@ const ProfilScreen = ({ navigation }) => {
           <>
             {/* Champs spécifiques au livreur */}
             <View style={tw`py-2 border-b border-slate-100`}>
-              <Text style={tw`text-sm text-slate-500 mb-1`}>Téléphone</Text>
+              <Text style={tw`mb-1 text-sm text-slate-500`}>Téléphone</Text>
               {edition ? (
                 <TextInput
                   style={tw`text-slate-700`}
@@ -190,10 +190,10 @@ const ProfilScreen = ({ navigation }) => {
             </View>
 
             <View style={tw`py-2 border-b border-slate-100`}>
-              <Text style={tw`text-sm text-slate-500 mb-1`}>Statut</Text>
+              <Text style={tw`mb-1 text-sm text-slate-500`}>Statut</Text>
               {edition ? (
                 <View style={tw`flex-row items-center`}>
-                  <Text style={tw`text-slate-700 mr-2`}>{formData.statut ? 'Actif' : 'Inactif'}</Text>
+                  <Text style={tw`mr-2 text-slate-700`}>{formData.statut ? 'Actif' : 'Inactif'}</Text>
                   <Switch
                     value={formData.statut}
                     onValueChange={(value) => handleChange('statut', value)}
@@ -209,7 +209,7 @@ const ProfilScreen = ({ navigation }) => {
             </View>
 
             <View style={tw`py-2 border-b border-slate-100`}>
-              <Text style={tw`text-sm text-slate-500 mb-1`}>Type de véhicule</Text>
+              <Text style={tw`mb-1 text-sm text-slate-500`}>Type de véhicule</Text>
               {edition ? (
                 <TextInput
                   style={tw`text-slate-700`}
@@ -223,7 +223,7 @@ const ProfilScreen = ({ navigation }) => {
             </View>
 
             <View style={tw`py-2`}>
-              <Text style={tw`text-sm text-slate-500 mb-1`}>Plaque d'immatriculation</Text>
+              <Text style={tw`mb-1 text-sm text-slate-500`}>Plaque d'immatriculation</Text>
               {edition ? (
                 <TextInput
                   style={tw`text-slate-700`}
@@ -272,17 +272,17 @@ const ProfilScreen = ({ navigation }) => {
         </View>
       )}
 
-      <View style={tw`bg-white rounded-lg shadow-sm p-4 mb-4`}>
-        <Text style={tw`text-lg font-semibold text-slate-800 mb-3`}>Actions</Text>
+      <View style={tw`p-4 mb-4 bg-white rounded-lg shadow-sm`}>
+        <Text style={tw`mb-3 text-lg font-semibold text-slate-800`}>Actions</Text>
 
         <Button
           title="Changer le mot de passe"
           onPress={handleChangementMotDePasse}
-          variant="outline"
-          icon={<Ionicons name="key" size={18} color={tw.color('text-white')} />}
-          style={tw`mb-3 `}
-          
+          icon={<Ionicons name="key" size={18} color="white" />}
+          style={[tw`mb-3`, { backgroundColor: tw.color('violet-600'), borderColor: tw.color('violet-600') }]}
+          titleStyle={{ color: 'white' }}
         />
+
 
         <Button
           title="Déconnexion"
