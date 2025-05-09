@@ -113,16 +113,16 @@ const ReinitialiserMotDePasseScreen = ({ route, navigation }) => {
       style={tw`flex-1 bg-slate-50`}
     >
       <ScrollView 
-        contentContainerStyle={tw`flex-grow justify-center p-6`}
+        contentContainerStyle={tw`justify-center flex-grow p-6`}
         keyboardShouldPersistTaps="handled"
       >
         <View style={tw`items-center mb-10`}>
-          <View style={tw`w-20 h-20 rounded-full bg-violet-100 justify-center items-center mb-4`}>
-            <Ionicons name="lock-open" color={tw.color("text-violet-600")} size={40} />
+          <View style={tw`items-center justify-center w-20 h-20 mb-4 bg-orange-100 rounded-full`}>
+            <Ionicons name="lock-open" color={tw.color("text-orange-600")} size={40} />
           </View>
-          <Text style={tw`text-2xl font-bold text-slate-800 mb-2`}>Nouveau mot de passe</Text>
+          <Text style={tw`mb-2 text-2xl font-bold text-slate-800`}>Nouveau mot de passe</Text>
           {email && (
-            <Text style={tw`text-base text-slate-500 text-center`}>
+            <Text style={tw`text-base text-center text-slate-500`}>
               Pour {email}
             </Text>
           )}
@@ -131,17 +131,17 @@ const ReinitialiserMotDePasseScreen = ({ route, navigation }) => {
         <View style={tw`w-full`}>
           {/* Error Message */}
           {erreur ? (
-            <View style={tw`flex-row items-center bg-red-50 p-3 rounded-lg mb-4 border border-red-100`}>
+            <View style={tw`flex-row items-center p-3 mb-4 border border-red-100 rounded-lg bg-red-50`}>
               <Ionicons name="alert-circle" size={20} color={tw.color("text-red-600")} />
-              <Text style={tw`text-red-700 ml-2 text-sm`}>{erreur}</Text>
+              <Text style={tw`ml-2 text-sm text-red-700`}>{erreur}</Text>
             </View>
           ) : null}
 
           {/* Success Message */}
           {succes ? (
-            <View style={tw`flex-row items-center bg-green-50 p-3 rounded-lg mb-4 border border-green-100`}>
+            <View style={tw`flex-row items-center p-3 mb-4 border border-green-100 rounded-lg bg-green-50`}>
               <Ionicons name="checkmark-circle" size={20} color={tw.color("text-green-600")} />
-              <Text style={tw`text-green-700 ml-2 text-sm`}>{succes}</Text>
+              <Text style={tw`ml-2 text-sm text-green-700`}>{succes}</Text>
             </View>
           ) : null}
 
@@ -180,7 +180,7 @@ const ReinitialiserMotDePasseScreen = ({ route, navigation }) => {
             }
             onPress={handleReinitialisation}
             disabled={chargement}
-            style={tw`mt-2 h-12`}
+            style={tw`h-12 mt-2`}
           />
 
           {/* Back to Login Link */}
@@ -189,7 +189,7 @@ const ReinitialiserMotDePasseScreen = ({ route, navigation }) => {
             onPress={() => navigation.navigate("Connexion")}
             disabled={chargement}
           >
-            <Text style={tw`text-violet-600 text-sm font-medium`}>
+            <Text style={tw`text-sm font-medium text-orange-600`}>
               Retour à la connexion
             </Text>
           </TouchableOpacity>

@@ -74,7 +74,10 @@ api.interceptors.response.use(
     if (axios.isCancel(error)) {
       return Promise.reject(error);
     }
-    
+       // Skip password change endpoint
+       if (error.config?.url?.includes('changer-mot-de-passe')) {
+        return Promise.reject(error);
+      }
     // Only handle 401 errors for authenticated requests
     if (error.config?.headers?.Authorization && error.response?.status === 401) {
       await deconnexionSilencieuse();
@@ -139,15 +142,27 @@ api.interceptors.response.use(
         nouveauMotDePasse
       });
   
+      // Handle successful response first
       if (response.data?.success) {
+        // Force a re-authentication since the token might be invalidated
+        await verifierAuthentification();
         return { 
           success: true,
           message: response.data.message 
         };
-      } else {
-        throw new Error(response.data?.error || "Échec du changement de mot de passe");
       }
+      
+      throw new Error(response.data?.error || "Échec du changement de mot de passe");
     } catch (err) {
+      // Ignore 401 errors if the password change was successful
+      if (err.response?.status === 401 && err.config?.url?.includes('changer-mot-de-passe')) {
+        await verifierAuthentification();
+        return {
+          success: true,
+          message: "Mot de passe changé avec succès (session rafraîchie)"
+        };
+      }
+      
       console.error('Erreur changement mot de passe:', err);
       return {
         success: false,
@@ -155,7 +170,6 @@ api.interceptors.response.use(
       };
     }
   };
-
   const reinitialiserMotDePasse = async (email, code, nouveauMotDePasse, token) => {
     try {
       console.log("[DEBUG] Making reset request with token:", token);

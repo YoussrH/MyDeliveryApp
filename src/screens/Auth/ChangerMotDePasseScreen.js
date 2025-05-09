@@ -43,20 +43,26 @@ const ChangerMotDePasseScreen = ({ navigation }) => {
     try {
       const result = await changerMotDePasse(motDePasseActuel, nouveauMotDePasse);
       
-      if (result.succes) {
-        setSucces("Mot de passe changé avec succès");
-        // Clear form
+      if (result.success) {
+        setSucces(result.message || "Mot de passe changé avec succès");
         setMotDePasseActuel("");
         setNouveauMotDePasse("");
         setConfirmerMotDePasse("");
-        // Navigate back after 1.5 seconds
+        
         setTimeout(() => {
           navigation.goBack();
+          // If the above doesn't work, navigate to a default screen after a small delay
+          setTimeout(() => {
+            if (!navigation.canGoBack()) {
+              navigation.navigate('Profil');
+            }
+          }, 100);
         }, 1500);
       } else {
-        setErreur(result.erreur || "Échec du changement de mot de passe");
+        setErreur(result.error || "Échec du changement de mot de passe");
       }
     } catch (error) {
+      // This will now only catch unexpected errors
       setErreur("Une erreur est survenue lors du changement de mot de passe");
       console.error("Erreur changement mot de passe:", error);
     }
@@ -81,15 +87,15 @@ const ChangerMotDePasseScreen = ({ navigation }) => {
       style={tw`flex-1 bg-slate-50`}
     >
       <ScrollView 
-        contentContainerStyle={tw`flex-grow justify-center p-6`}
+        contentContainerStyle={tw`justify-center flex-grow p-6`}
         keyboardShouldPersistTaps="handled"
       >
         <View style={tw`items-center mb-10`}>
-          <View style={tw`w-20 h-20 rounded-full bg-violet-100 justify-center items-center mb-4`}>
-            <Ionicons name="lock-closed" color={tw.color("text-violet-600")} size={40} />
+          <View style={tw`items-center justify-center w-20 h-20 mb-4 bg-orange-100 rounded-full`}>
+            <Ionicons name="lock-closed" color={tw.color("text-orange-600")} size={40} />
           </View>
-          <Text style={tw`text-2xl font-bold text-slate-800 mb-2`}>Changer le mot de passe</Text>
-          <Text style={tw`text-base text-slate-500 text-center`}>
+          <Text style={tw`mb-2 text-2xl font-bold text-slate-800`}>Changer le mot de passe</Text>
+          <Text style={tw`text-base text-center text-slate-500`}>
             Pour des raisons de sécurité, choisissez un mot de passe fort
           </Text>
         </View>
@@ -97,17 +103,17 @@ const ChangerMotDePasseScreen = ({ navigation }) => {
         <View style={tw`w-full`}>
           {/* Error Message */}
           {erreur ? (
-            <View style={tw`flex-row items-center bg-red-100 p-3 rounded-lg mb-4`}>
+            <View style={tw`flex-row items-center p-3 mb-4 bg-red-100 rounded-lg`}>
               <Ionicons name="alert-circle" size={20} color={tw.color("text-red-500")} />
-              <Text style={tw`text-red-700 ml-2 text-sm`}>{erreur}</Text>
+              <Text style={tw`ml-2 text-sm text-red-700`}>{erreur}</Text>
             </View>
           ) : null}
 
           {/* Success Message */}
           {succes ? (
-            <View style={tw`flex-row items-center bg-green-100 p-3 rounded-lg mb-4`}>
+            <View style={tw`flex-row items-center p-3 mb-4 bg-green-100 rounded-lg`}>
               <Ionicons name="checkmark-circle" size={20} color={tw.color("text-green-500")} />
-              <Text style={tw`text-green-700 ml-2 text-sm`}>{succes}</Text>
+              <Text style={tw`ml-2 text-sm text-green-700`}>{succes}</Text>
             </View>
           ) : null}
 
@@ -158,7 +164,7 @@ const ChangerMotDePasseScreen = ({ navigation }) => {
             title="Changer le mot de passe" 
             onPress={handleChangementMotDePasse} 
             loading={chargement} 
-            style={tw`mt-2 h-12`}
+            style={tw`h-12 mt-2 bg-orange-600`}
             disabled={chargement}
           />
         </View>

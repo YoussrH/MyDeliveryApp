@@ -106,7 +106,7 @@ const AccueilScreen = () => {
   if (chargement.livraisons && !refreshing) {
     return (
       <View style={tw`items-center justify-center flex-1`}>
-        <ActivityIndicator size="large" color={tw.color("violet-600")} />
+        <ActivityIndicator size="large" color={tw.color("orange-600")} />
       </View>
     );
   }
@@ -208,7 +208,7 @@ const AccueilScreen = () => {
             <TouchableOpacity 
               onPress={() => navigation.navigate("Livraisons", { fromAccueil: true })}
             >
-              <Text style={tw`text-sm font-medium text-violet-600`}>Voir tout</Text>
+              <Text style={tw`text-sm font-medium text-orange-600`}>Voir tout</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -271,7 +271,7 @@ const AccueilScreen = () => {
       </View>
 
       {/* Quick Actions */}
-      <View style={tw`mb-6`}>
+    {/*   <View style={tw`mb-6`}>
         <Text style={tw`mb-4 text-lg font-semibold text-slate-800`}>
           Actions rapides
         </Text>
@@ -318,7 +318,7 @@ const AccueilScreen = () => {
             <Text style={tw`text-sm text-slate-800`}>Statistiques</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </View> */}
     </ScrollView>
   );
 };

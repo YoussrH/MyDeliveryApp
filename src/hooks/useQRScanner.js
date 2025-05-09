@@ -9,25 +9,23 @@ export const useQRScanner = () => {
   const [resultat, setResultat] = useState(null);
 
   const scannerQRCode = useCallback(async (qrData) => {
+    setChargement(true);
+    setErreur(null);
+    
     try {
-      setChargement(true);
-      setErreur(null);
-      setResultat(null);
-      
-      const response = await api.post('/expiditions/colis/scanner-qr', {
+      const response = await api.post('/expeditions/colis/scanner-qr', {
         code: qrData
       });
-      
-      if (response.data?.success) {
+
+      if (response.data.success) {
         setResultat(response.data.data);
-        return response.data.data;
       } else {
-        throw new Error(response.data?.message || 'QR code processing failed');
+        setErreur(response.data.message || 'Erreur lors du scan du QR code');
       }
-    } catch (err) {
-      setErreur(err.message);
-      console.error('QR scanning error:', err);
-      return null;
+    } catch (error) {
+      setErreur(error.response?.data?.message || 
+               error.message || 
+               'Erreur de connexion');
     } finally {
       setChargement(false);
     }

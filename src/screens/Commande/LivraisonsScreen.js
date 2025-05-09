@@ -208,9 +208,9 @@ const LivraisonsScreen  = () => {
           <MaterialCommunityIcons 
             name="calendar" 
             size={16} 
-            color={tw.color("text-violet-600")} 
+            color={tw.color("text-orange-600")} 
           />
-          <Text style={tw`ml-2 text-violet-600`}>
+          <Text style={tw`ml-2 text-orange-600`}>
             {formatShortDate(dateSelectionnee)}
           </Text>
         </TouchableOpacity>
@@ -225,7 +225,7 @@ const LivraisonsScreen  = () => {
               key={filter.id}
               style={[
                 tw`px-3 py-2 rounded-full bg-slate-200`,
-                filtreStatut === filter.id && tw`bg-violet-600`
+                filtreStatut === filter.id && tw`bg-orange-600`
               ]}
               onPress={() => setFiltreStatut(filter.id)}
             >
@@ -267,7 +267,7 @@ const LivraisonsScreen  = () => {
                 <Text style={tw`font-medium text-slate-700`}>Annuler</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={tw`px-6 py-2 rounded-full bg-violet-600`}
+                style={tw`px-6 py-2 bg-orange-600 rounded-full`}
                 onPress={() => {
                   setDateSelectionnee(tempDate)
                   setShowDatePicker(false)
@@ -284,14 +284,14 @@ const LivraisonsScreen  = () => {
       {/* Content */}
       {chargement.livraisons ? (
         <View style={tw`items-center justify-center flex-1`}>
-          <ActivityIndicator size="large" color={tw.color("text-violet-600")} />
+          <ActivityIndicator size="large" color={tw.color("text-orange-600")} />
           <Text style={tw`mt-2 text-slate-500`}>Chargement des livraisons...</Text>
         </View>
       ) : erreur ? (
         <View style={tw`items-center justify-center p-6 bg-white shadow-sm rounded-xl`}>
           <Text style={tw`text-red-500`}>Erreur: {erreur}</Text>
           <TouchableOpacity
-            style={tw`px-4 py-2 mt-4 rounded-full bg-violet-600`}
+            style={tw`px-4 py-2 mt-4 bg-orange-600 rounded-full`}
             onPress={chargerLivraisons}
           >
             <Text style={tw`font-medium text-white`}>Réessayer</Text>
@@ -312,7 +312,7 @@ const LivraisonsScreen  = () => {
                   : `Aucune livraison ${statusFilters.find(f => f.id === filtreStatut)?.label.toLowerCase()} trouvée`}
               </Text>
               <TouchableOpacity
-                style={tw`px-4 py-2 mt-4 rounded-full bg-violet-600`}
+                style={tw`px-4 py-2 mt-4 bg-orange-600 rounded-full`}
                 onPress={chargerLivraisons}
               >
                 <Text style={tw`font-medium text-white`}>Rafraîchir</Text>

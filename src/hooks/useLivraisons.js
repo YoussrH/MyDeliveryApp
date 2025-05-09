@@ -163,6 +163,106 @@ export const useLivraisons = () => {
     return data;
   }, [fetchData]);
 
+  const obtenirLivraisonsParLivreur = useCallback(async (livreurId) => {
+    const data = await fetchData(`/livraisons/livreur/${livreurId}`, 'livraisons', (res) => {
+      return res.data.map(item => ({
+        ...item,
+        colis: item.colis || [],
+        date_livraison: item.date_livraison || item.colis?.[0]?.date_livraison
+      }));
+    });
+    setLivraisons(data);
+    return data;
+  }, [fetchData]);
+  const obtenirLivraisonParId = useCallback(async (id) => {
+    try {
+      setChargement(prev => ({ ...prev, details: true }));
+      setErreur(null);
+  
+      const response = await api.get(`/livraisons/obtenirLivraisonParId/${id}`);
+      if (response.data?.success) {
+        return {
+          ...response.data.data,
+          date_livraison: response.data.data.date_livraison || response.data.data.colis?.[0]?.date_livraison
+        };
+      }
+      throw new Error(response.data?.message || 'Échec de la récupération des détails');
+    } catch (err) {
+      setErreur(err.message);
+      console.error('Erreur récupération détails:', err);
+      throw err;
+    } finally {
+      setChargement(prev => ({ ...prev, details: false }));
+    }
+  }, [api]);
+
+  const updateServiceStatus = useCallback(async (enService) => {
+    try {
+      setChargement(prev => ({ ...prev, service: true }));
+      setErreur(null);
+
+      const response = await api.put(`/livraisons/livreur/${livreurInfo?.utilisateur_id}/status`, { enService });
+      
+      if (response.data?.success) {
+        return true;
+      }
+      throw new Error(response.data?.message || 'Échec de la mise à jour du statut de service');
+    } catch (err) {
+      setErreur(err.message);
+      console.error('Erreur mise à jour statut service:', err);
+      return false;
+    } finally {
+      setChargement(prev => ({ ...prev, service: false }));
+    }
+  }, [api, livreurInfo]);
+   
+  const mettreAJourStatutLivraison = useCallback(async (commandeId, nouveauStatut) => {
+    const previousLivraisons = [...livraisons];
+    try {
+      setChargement(prev => ({ ...prev, statut: true }));
+      setErreur(null);
+  
+      // Optimistic update
+      setLivraisons(prev => prev.map(liv => 
+        liv.id === commandeId 
+          ? { 
+              ...liv, 
+              statut: nouveauStatut,
+              colis: liv.colis.map(col => ({
+                ...col,
+                statut: nouveauStatut === 'livree' ? 'livree' : col.statut,
+                ...(nouveauStatut === 'livree' && { date_livraison: new Date().toISOString() })
+              }))
+            } 
+          : liv
+      ));
+  
+      // Updated API call to match backend
+      const response = await api.put(`/livraisons/${commandeId}/statut`, { 
+        statut: nouveauStatut,
+        livreur_id: livreurInfo?.utilisateur_id 
+      });
+      
+      if (response.data?.success) {
+        // If successful, update with the actual response data
+        const updatedLivraison = response.data.data;
+        setLivraisons(prev => prev.map(liv => 
+          liv.id === commandeId ? updatedLivraison : liv
+        ));
+        return true;
+      }
+      
+      // Rollback on failure
+      setLivraisons(previousLivraisons);
+      throw new Error(response.data?.message || 'Échec de la mise à jour du statut');
+    } catch (err) {
+      setErreur(err.message);
+      console.error('Erreur mise à jour statut:', err);
+      return false;
+    } finally {
+      setChargement(prev => ({ ...prev, statut: false }));
+    }
+  }, [api, livraisons, livreurInfo]);
   // Load initial data
   useEffect(() => {
     let isMounted = true;
@@ -209,6 +309,11 @@ export const useLivraisons = () => {
     obtenirMesLivraisons,
     obtenirLivraisonsParDate,
     obtenirStatistiques,
+    obtenirLivraisonsParLivreur,
+    obtenirLivraisonParId,
+    
+    mettreAJourStatutLivraison,
+    updateServiceStatus,
     refetch: obtenirLivraisonsAujourdhui
   };
 };

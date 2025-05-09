@@ -96,15 +96,15 @@ const MotDePasseOublieScreen = ({ navigation }) => {
       style={tw`flex-1 bg-slate-50`}
     >
       <ScrollView 
-        contentContainerStyle={tw`flex-grow justify-center p-6`}
+        contentContainerStyle={tw`justify-center flex-grow p-6`}
         keyboardShouldPersistTaps="handled"
       >
         <View style={tw`items-center mb-10`}>
-          <View style={tw`w-20 h-20 rounded-full bg-violet-100 justify-center items-center mb-4`}>
-            <Ionicons name="lock-closed" color={tw.color("text-violet-600")} size={40} />
+          <View style={tw`items-center justify-center w-20 h-20 mb-4 bg-orange-100 rounded-full`}>
+            <Ionicons name="lock-closed" color={tw.color("text-orange-600")} size={40} />
           </View>
-          <Text style={tw`text-2xl font-bold text-slate-800 mb-2`}>Mot de passe oublié</Text>
-          <Text style={tw`text-base text-slate-500 text-center`}>
+          <Text style={tw`mb-2 text-2xl font-bold text-slate-800`}>Mot de passe oublié</Text>
+          <Text style={tw`text-base text-center text-slate-500`}>
             Entrez votre email pour recevoir un code de réinitialisation
           </Text>
         </View>
@@ -124,19 +124,19 @@ const MotDePasseOublieScreen = ({ navigation }) => {
         />
 
         {erreur && (
-          <View style={tw`bg-red-50 p-3 rounded-lg mb-4 border border-red-100`}>
+          <View style={tw`p-3 mb-4 border border-red-100 rounded-lg bg-red-50`}>
             <View style={tw`flex-row items-center`}>
               <Ionicons name="warning" size={20} color={tw.color("text-red-600")} />
-              <Text style={tw`text-red-700 ml-2`}>{erreur}</Text>
+              <Text style={tw`ml-2 text-red-700`}>{erreur}</Text>
             </View>
           </View>
         )}
 
         {succes && (
-          <View style={tw`bg-green-50 p-3 rounded-lg mb-4 border border-green-100`}>
+          <View style={tw`p-3 mb-4 border border-green-100 rounded-lg bg-green-50`}>
             <View style={tw`flex-row items-center`}>
               <Ionicons name="checkmark-circle" size={20} color={tw.color("text-green-600")} />
-              <Text style={tw`text-green-700 ml-2`}>{succes}</Text>
+              <Text style={tw`ml-2 text-green-700`}>{succes}</Text>
             </View>
           </View>
         )}
@@ -149,7 +149,7 @@ const MotDePasseOublieScreen = ({ navigation }) => {
           }
           onPress={handleDemandeReinitialisation}
           disabled={chargement || compteur > 0}
-          style={tw`mt-2 h-12`}
+          style={tw`h-12 mt-2`}
         />
 
         <TouchableOpacity 
@@ -159,7 +159,7 @@ const MotDePasseOublieScreen = ({ navigation }) => {
             navigation.goBack();
           }}
         >
-          <Text style={tw`text-violet-600 text-sm font-medium`}>
+          <Text style={tw`text-sm font-medium text-orange-600`}>
             Retour à la connexion
           </Text>
         </TouchableOpacity>

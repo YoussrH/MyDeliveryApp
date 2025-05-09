@@ -106,7 +106,7 @@ const ProfilScreen = ({ navigation }) => {
   if (loading) {
     return (
       <View style={tw`items-center justify-center flex-1 bg-slate-50`}>
-        <ActivityIndicator size="large" color={tw.color('violet-600')} />
+        <ActivityIndicator size="large" color={tw.color('orange-600')} />
       </View>
     );
   }
@@ -115,19 +115,13 @@ const ProfilScreen = ({ navigation }) => {
     navigation.navigate('ChangerMotDePasse');
   };
 
-/*   if (!profileData) {
-    return (
-      <View style={tw`items-center justify-center flex-1 bg-slate-50`}>
-        <ActivityIndicator size="large" color={tw.color('violet-600')} />
-      </View>
-    );
-  } */
+
 
   return (
-    <ScrollView style={tw`flex-1 bg-slate-50`} contentContainerStyle={tw`p-4`}>
+    <ScrollView style={tw`flex-1 pt-10 bg-slate-50`} contentContainerStyle={tw`p-4`}>
       <View style={tw`items-center mb-6`}>
-        <View style={tw`items-center justify-center w-24 h-24 mb-4 rounded-full bg-violet-100`}>
-          <Ionicons name="person" size={48} color={tw.color('text-violet-600')} />
+        <View style={tw`items-center justify-center w-24 h-24 mb-4 bg-orange-100 rounded-full`}>
+          <Ionicons name="person" size={48} color={tw.color('text-orange-600')} />
         </View>
 
         {edition ? (
@@ -164,8 +158,8 @@ const ProfilScreen = ({ navigation }) => {
         )}
 
         {utilisateur?.role === 'livreur' && (
-          <View style={tw`px-3 py-1 mt-2 rounded-full bg-violet-100`}>
-            <Text style={tw`text-sm font-medium text-violet-700`}>Livreur</Text>
+          <View style={tw`px-3 py-1 mt-2 bg-orange-100 rounded-full`}>
+            <Text style={tw`text-sm font-medium text-orange-700`}>Livreur</Text>
           </View>
         )}
       </View>
@@ -176,7 +170,7 @@ const ProfilScreen = ({ navigation }) => {
           <Text style={tw`text-lg font-semibold text-slate-800`}>Informations</Text>
           {utilisateur?.role === 'livreur' && (
             <TouchableOpacity onPress={toggleEdition}>
-              <Ionicons name={edition ? 'close' : 'create'} size={20} color={tw.color('text-violet-600')} />
+              <Ionicons name={edition ? 'close' : 'create'} size={20} color={tw.color('text-orange-600')} />
             </TouchableOpacity>
           )}
         </View>
@@ -207,8 +201,8 @@ const ProfilScreen = ({ navigation }) => {
                   <Switch
                     value={formData.statut}
                     onValueChange={(value) => handleChange('statut', value)}
-                    thumbColor={tw.color('violet-600')}
-                    trackColor={{ false: tw.color('slate-200'), true: tw.color('violet-300') }}
+                    thumbColor={tw.color('orange-600')}
+                    trackColor={{ false: tw.color('slate-200'), true: tw.color('orange-300') }}
                   />
                 </View>
               ) : (
@@ -289,7 +283,7 @@ const ProfilScreen = ({ navigation }) => {
           title="Changer le mot de passe"
           onPress={handleChangementMotDePasse}
           icon={<Ionicons name="key" size={18} color="white" />}
-          style={[tw`mb-3`, { backgroundColor: tw.color('violet-600'), borderColor: tw.color('violet-600') }]}
+          style={[tw`mb-3`, { backgroundColor: tw.color('orange-600'), borderColor: tw.color('orange-600') }]}
           titleStyle={{ color: 'white' }}
         />
 
@@ -298,6 +292,7 @@ const ProfilScreen = ({ navigation }) => {
           title="Déconnexion"
           onPress={handleDeconnexion}
           variant="danger"
+          style={[tw`mb-3`, { backgroundColor: tw.color('orange-600'), borderColor: tw.color('red-600') }]}
           icon={<Ionicons name="log-out" size={18} color={tw.color('text-white')} />}
         />
       </View>

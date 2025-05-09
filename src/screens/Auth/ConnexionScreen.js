@@ -82,22 +82,22 @@ const ConnexionScreen = () => {
       style={tw`flex-1 bg-slate-50`}
     >
       <ScrollView 
-        contentContainerStyle={tw`flex-grow justify-center p-6`}
+        contentContainerStyle={tw`justify-center flex-grow p-6`}
         keyboardShouldPersistTaps="handled"
       >
         <View style={tw`items-center mb-10`}>
-          <View style={tw`w-20 h-20 rounded-full bg-violet-100 justify-center items-center mb-4`}>
-            <MaterialCommunityIcons name="bike-fast" color={tw.color("text-violet-600")} size={40} />
+          <View style={tw`items-center justify-center w-20 h-20 mb-4 bg-orange-100 rounded-full`}>
+            <MaterialCommunityIcons name="bike-fast" color={tw.color("text-orange-600")} size={40} />
           </View>
-          <Text style={tw`text-2xl font-bold text-slate-800 mb-2`}>Livreur Pro</Text>
-          <Text style={tw`text-base text-slate-500 text-center`}>Connectez-vous pour commencer</Text>
+          <Text style={tw`mb-2 text-2xl font-bold text-slate-800`}>Livreur Pro</Text>
+          <Text style={tw`text-base text-center text-slate-500`}>Connectez-vous pour commencer</Text>
         </View>
 
         <View style={tw`w-full`}>
           {(erreur || authErreur) && (
-            <View style={tw`flex-row items-center bg-red-50 p-3 rounded-lg mb-4 border border-red-100`}>
+            <View style={tw`flex-row items-center p-3 mb-4 border border-red-100 rounded-lg bg-red-50`}>
               <Ionicons name="alert-circle" size={20} color={tw.color("text-red-600")} />
-              <Text style={tw`text-red-700 ml-2 text-sm`}>{erreur || authErreur}</Text>
+              <Text style={tw`ml-2 text-sm text-red-700`}>{erreur || authErreur}</Text>
             </View>
           )}
 
@@ -127,7 +127,7 @@ const ConnexionScreen = () => {
             style={tw`self-end mb-6`}
             onPress={handleMotDePasseOublie}
           >
-            <Text style={tw`text-violet-600 text-sm font-medium`}>Mot de passe oublié ?</Text>
+            <Text style={tw`text-sm font-medium text-orange-600`}>Mot de passe oublié ?</Text>
           </TouchableOpacity>
 
           <Button 
@@ -140,7 +140,7 @@ const ConnexionScreen = () => {
             }
             onPress={handleConnexion} 
             disabled={isSubmitting || authChargement}
-            style={tw`mt-2 h-12`}
+            style={tw`h-12 mt-2 bg-orange-600`}
             icon={!(isSubmitting || authChargement) && <Ionicons name="arrow-forward" size={20} color="white" />}
           />
         </View>

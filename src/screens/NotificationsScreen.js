@@ -58,25 +58,25 @@ const NotificationsScreen = () => {
     switch (type) {
       case "nouvelle_commande":
         return (
-          <View style={tw`w-10 h-10 rounded-full bg-violet-100 justify-center items-center`}>
-            <MaterialCommunityIcons name="package-variant" color={tw.color("text-violet-600")} {...iconProps} />
+          <View style={tw`items-center justify-center w-10 h-10 bg-orange-100 rounded-full`}>
+            <MaterialCommunityIcons name="package-variant" color={tw.color("text-orange-600")} {...iconProps} />
           </View>
         )
       case "message":
         return (
-          <View style={tw`w-10 h-10 rounded-full bg-blue-100 justify-center items-center`}>
+          <View style={tw`items-center justify-center w-10 h-10 bg-blue-100 rounded-full`}>
             <Ionicons name="chatbubble" color={tw.color("text-blue-500")} {...iconProps} />
           </View>
         )
       case "alerte":
         return (
-          <View style={tw`w-10 h-10 rounded-full bg-red-100 justify-center items-center`}>
+          <View style={tw`items-center justify-center w-10 h-10 bg-red-100 rounded-full`}>
             <Ionicons name="alert" color={tw.color("text-red-500")} {...iconProps} />
           </View>
         )
       default:
         return (
-          <View style={tw`w-10 h-10 rounded-full bg-slate-100 justify-center items-center`}>
+          <View style={tw`items-center justify-center w-10 h-10 rounded-full bg-slate-100`}>
             <Ionicons name="notifications" color={tw.color("text-slate-500")} {...iconProps} />
           </View>
         )
@@ -99,15 +99,15 @@ const NotificationsScreen = () => {
       activeOpacity={0.7}
     >
       <View style={[
-        tw`bg-white p-4 rounded-xl shadow-sm mb-3`,
-        !item.lue && tw`bg-violet-50 border-l-4 border-violet-600`
+        tw`p-4 mb-3 bg-white shadow-sm rounded-xl`,
+        !item.lue && tw`border-l-4 border-orange-600 bg-violet-50`
       ]}>
         <View style={tw`flex-row items-start`}>
           {getNotificationIcon(item.type)}
           <View style={tw`flex-1`}>
             <Text style={tw`text-base font-semibold text-slate-800`}>{item.titre}</Text>
-            <Text style={tw`text-sm text-slate-600 mt-1`}>{item.message}</Text>
-            <Text style={tw`text-xs text-slate-500 mt-2`}>{formatDate(item.date)}</Text>
+            <Text style={tw`mt-1 text-sm text-slate-600`}>{item.message}</Text>
+            <Text style={tw`mt-2 text-xs text-slate-500`}>{formatDate(item.date)}</Text>
           </View>
         </View>
       </View>
@@ -116,18 +116,18 @@ const NotificationsScreen = () => {
 
   if (loading) {
     return (
-      <View style={tw`flex-1 justify-center items-center`}>
+      <View style={tw`items-center justify-center flex-1`}>
         <Text>Chargement des notifications...</Text>
       </View>
     )
   }
 
   return (
-    <View style={tw`flex-1 bg-slate-50 p-4 mt-10`}>
-      <View style={tw`flex-row justify-between items-center mb-4`}>
+    <View style={tw`flex-1 p-4 mt-10 bg-slate-50`}>
+      <View style={tw`flex-row items-center justify-between mb-4`}>
         <Text style={tw`text-2xl font-bold text-slate-800`}>Notifications</Text>
         <TouchableOpacity onPress={markAllAsRead}>
-          <Text style={tw`text-violet-600 text-sm font-medium`}>Tout marquer comme lu</Text>
+          <Text style={tw`text-sm font-medium text-orange-600`}>Tout marquer comme lu</Text>
         </TouchableOpacity>
       </View>
 
@@ -137,7 +137,7 @@ const NotificationsScreen = () => {
         keyExtractor={(item) => item.id}
         contentContainerStyle={tw`pb-4`}
         ListEmptyComponent={
-          <View style={tw`bg-white p-6 rounded-xl shadow-sm items-center justify-center`}>
+          <View style={tw`items-center justify-center p-6 bg-white shadow-sm rounded-xl`}>
             <Text style={tw`text-slate-500`}>Aucune notification</Text>
           </View>
         }

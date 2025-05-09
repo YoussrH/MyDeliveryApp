@@ -28,7 +28,7 @@ const ScanButton = ({ children, onPress }) => {
       onPress={onPress} 
       activeOpacity={0.9}
     >
-      <View style={tw`items-center justify-center rounded-full shadow-lg w-14 h-14 bg-violet-600 shadow-violet-600/30`}>
+      <View style={tw`items-center justify-center bg-orange-600 rounded-full shadow-lg w-14 h-14 shadow-orange-600/30`}>
         {children}
       </View>
     </TouchableOpacity>
@@ -40,7 +40,7 @@ const TabNavigator = () => {
     <Tab.Navigator
       screenOptions={{
         tabBarStyle: tw`h-16 bg-white border-t-0 shadow-md`,
-        tabBarActiveTintColor: tw.color("text-violet-600"),
+        tabBarActiveTintColor: tw.color("text-orange-600"),
         tabBarInactiveTintColor: tw.color("text-slate-500"),
         tabBarShowLabel: true,
         headerShown: false,
@@ -96,7 +96,7 @@ const TabNavigator = () => {
             />
           ),
           tabBarBadge: 3,
-          tabBarBadgeStyle: tw`text-white bg-violet-600`,
+          tabBarBadgeStyle: tw`text-white bg-orange-600`,
         }}
       />
       <Tab.Screen
@@ -131,7 +131,7 @@ const AuthStack = () => (
         title: "Mot de passe oublié",
         headerTitleStyle: tw`font-mono text-lg font-semibold text-slate-800`,
         headerBackTitleVisible: false,
-        headerTintColor: tw.color("text-violet-600"),
+        headerTintColor: tw.color("text-orange-600"),
         headerStyle: tw`bg-white border-b border-slate-200`,
       }}
     />
@@ -143,7 +143,7 @@ const AuthStack = () => (
         title: "Vérification",
         headerTitleStyle: tw`font-mono text-lg font-semibold text-slate-800`,
         headerBackTitleVisible: false,
-        headerTintColor: tw.color("text-violet-600"),
+        headerTintColor: tw.color("text-orange-600"),
         headerStyle: tw`bg-white border-b border-slate-200`,
       }}
     />
@@ -155,7 +155,7 @@ const AuthStack = () => (
         title: "Réinitialisation",
         headerTitleStyle: tw`font-mono text-lg font-semibold text-slate-800`,
         headerBackTitleVisible: false,
-        headerTintColor: tw.color("text-violet-600"),
+        headerTintColor: tw.color("text-orange-600"),
         headerStyle: tw`bg-white border-b border-slate-200`,
       }}
     />
@@ -168,7 +168,7 @@ const AppNavigator = () => {
   if (chargement) {
     return (
       <View style={tw`items-center justify-center flex-1 bg-white`}>
-        <ActivityIndicator size="large" color={tw.color("violet-600")} />
+        <ActivityIndicator size="large" color={tw.color("orange-600")} />
         <Text style={tw`mt-4 font-mono text-slate-500`}>Chargement...</Text>
       </View>
     );
@@ -188,7 +188,7 @@ const AppNavigator = () => {
               title: "Livraisons",
               headerTitleStyle: tw`font-mono text-lg font-semibold text-slate-800`,
               headerBackTitleVisible: false,
-              headerTintColor: tw.color("text-violet-600"),
+              headerTintColor: tw.color("text-orange-600"),
               headerStyle: tw`bg-white border-b border-slate-200`,
             }}
           />
@@ -200,7 +200,7 @@ const AppNavigator = () => {
               title: "Détails de commande",
               headerTitleStyle: tw`font-mono text-lg font-semibold text-slate-800`,
               headerBackTitleVisible: false,
-              headerTintColor: tw.color("text-violet-600"),
+              headerTintColor: tw.color("text-orange-600"),
               headerStyle: tw`bg-white border-b border-slate-200`,
             }}
           />
@@ -212,7 +212,7 @@ const AppNavigator = () => {
               title: "Changer mot de passe",
               headerTitleStyle: tw`font-mono text-lg font-semibold text-slate-800`,
               headerBackTitleVisible: false,
-              headerTintColor: tw.color("text-violet-600"),
+              headerTintColor: tw.color("text-orange-600"),
               headerStyle: tw`bg-white border-b border-slate-200`,
             }}
           />
@@ -224,7 +224,7 @@ const AppNavigator = () => {
               title: "Réinitialisation",
               headerTitleStyle: tw`font-mono text-lg font-semibold text-slate-800`,
               headerBackTitleVisible: false,
-              headerTintColor: tw.color("text-violet-600"),
+              headerTintColor: tw.color("text-orange-600"),
               headerStyle: tw`bg-white border-b border-slate-200`,
             }}
           />
