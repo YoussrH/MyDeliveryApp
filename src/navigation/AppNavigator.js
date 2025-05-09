@@ -228,6 +228,16 @@ const AppNavigator = () => {
               headerStyle: tw`bg-white border-b border-slate-200`,
             }}
           />
+              <Stack.Screen 
+            name="Profil" 
+            component={ProfilScreen}
+            options={{
+              headerShown: true,
+              title: "Profil",
+              headerBackTitleVisible: false,
+              headerTintColor: tw.color("text-orange-600"),
+            }}
+          />
         </>
       ) : (
         <Stack.Screen name="Auth" component={AuthStack} />

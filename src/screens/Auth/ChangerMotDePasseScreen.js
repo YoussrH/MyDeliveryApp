@@ -40,6 +40,7 @@ const ChangerMotDePasseScreen = ({ navigation }) => {
       return;
     }
 
+
     try {
       const result = await changerMotDePasse(motDePasseActuel, nouveauMotDePasse);
       
@@ -50,19 +51,19 @@ const ChangerMotDePasseScreen = ({ navigation }) => {
         setConfirmerMotDePasse("");
         
         setTimeout(() => {
-          navigation.goBack();
-          // If the above doesn't work, navigate to a default screen after a small delay
-          setTimeout(() => {
-            if (!navigation.canGoBack()) {
-              navigation.navigate('Profil');
-            }
-          }, 100);
+          // Try to go back first
+          if (navigation.canGoBack()) {
+            navigation.goBack();
+          } 
+          // If no back route, navigate to the main App stack
+          else {
+            navigation.navigate('App', { screen: 'Profil' });
+          }
         }, 1500);
       } else {
         setErreur(result.error || "Échec du changement de mot de passe");
       }
     } catch (error) {
-      // This will now only catch unexpected errors
       setErreur("Une erreur est survenue lors du changement de mot de passe");
       console.error("Erreur changement mot de passe:", error);
     }
