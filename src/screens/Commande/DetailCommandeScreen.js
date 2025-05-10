@@ -58,7 +58,8 @@ const DetailCommandeScreen = () => {
   const problemTypes = [
     { id: 'livraison_echouee', label: "Livraison échouée", icon: "close-circle" },
     { id: 'produit_endommage', label: "Produit endommagé", icon: "package-variant" },
-    { id: 'adresse_incorrecte', label: "Adresse incorrecte", icon: "map-marker-off" }
+    { id: 'adresse_incorrecte', label: "Adresse incorrecte", icon: "map-marker-off" },
+    { id: 'demande_de_remplacement', label: "Demande de remplacement", icon: "package-variant-plus" }
   ];
 
   useEffect(() => {
@@ -136,55 +137,113 @@ const DetailCommandeScreen = () => {
     }));
   };
 
-  const getStatutBadge = (statut) => {
-    const statusMap = {
-      expediee: { label: "En cours", variant: "warning" },
-      livree: { label: "Livrée", variant: "success" },
-      annulee: { label: "Annulée", variant: "danger" },
-      en_attente: { label: "En attente", variant: "info" },
-      en_preparation: { label: "En préparation", variant: "secondary" },
-      retournee: { label: "Retournée", variant: "neutral" },
-      echouee: { label: "Échouée", variant: "danger" }
-    };
+const getStatutBadge = (statut, badgeStatut) => {
+  const statusMap = {
+    expediee: { label: "En cours", variant: "warning" },
+    livree: { label: "Livrée", variant: "success" },
+    annulee: { label: "Annulée", variant: "danger" },
+    en_attente: { label: "En attente", variant: "info" },
+    en_preparation: { label: "En préparation", variant: "secondary" },
+    retourne: { label: "Retournée", variant: "danger" },
+    remplacee: { label: "Remplacée", variant: "neutral" },
+    echec: { label: "Échec", variant: "danger" }
+  };
+  
+  const statusKey = badgeStatut || statut;
+  const status = statusMap[statusKey] || statusMap.en_preparation;
+  return <Badge variant={status.variant}>{status.label}</Badge>;
+};
+
+// Update the handleStatusChange function
+const handleStatusChange = async (newStatus) => {
+  if (!livraison?.livraison_id) {
+    Alert.alert("Erreur", "Données de livraison incomplètes");
+    return;
+  }
+
+  try {
+    setUpdatingStatus(true);
+    const success = await mettreAJourStatutLivraison(livraison.livraison_id, newStatus);
     
-    const status = statusMap[statut] || statusMap.en_preparation;
-    return <Badge variant={status.variant}>{status.label}</Badge>;
-  };
-
-  const handleStatusChange = async (newStatus) => {
-    if (!livraison?.livraison_id) {
-      Alert.alert("Erreur", "Données de livraison incomplètes");
-      return;
-    }
-
-    try {
-      setUpdatingStatus(true);
-      const success = await mettreAJourStatutLivraison(livraison.livraison_id, newStatus);
+    if (success) {
+      setLivraison(prev => ({
+        ...prev,
+        statut: newStatus,
+        badge_statut: newStatus,
+        colis: prev.colis.map(colis => ({
+          ...colis,
+          statut: newStatus === 'livree' ? 'livree' : colis.statut,
+          ...(newStatus === 'livree' && { date_livraison: new Date().toISOString() })
+        }))
+      }));
       
-      if (success) {
-        setLivraison(prev => ({
-          ...prev,
-          statut: newStatus,
-          colis: prev.colis.map(colis => ({
-            ...colis,
-            statut: newStatus === 'livree' ? 'livree' : colis.statut,
-            ...(newStatus === 'livree' && { date_livraison: new Date().toISOString() })
-          }))
-        }));
-        
-        Alert.alert("Succès", `Statut mis à jour: ${newStatus}`);
-        
-        if (newStatus === 'livree') {
-          setTimeout(() => navigation.goBack(), 1500);
-        }
+      Alert.alert("Succès", `Statut mis à jour: ${newStatus}`);
+      
+      if (newStatus === 'livree') {
+        setTimeout(() => navigation.goBack(), 1500);
       }
-    } catch (error) {
-      console.error('Status update error:', error);
-      Alert.alert("Erreur", "Échec de la mise à jour");
-    } finally {
-      setUpdatingStatus(false);
     }
-  };
+  } catch (error) {
+    console.error('Status update error:', error);
+    Alert.alert("Erreur", "Échec de la mise à jour");
+  } finally {
+    setUpdatingStatus(false);
+  }
+};
+
+const submitProblemReport = async () => {
+  if (!problemType) {
+    Alert.alert('Erreur', 'Veuillez sélectionner un type de problème');
+    return;
+  }
+
+  try {
+    setIsReporting(true);
+    const result = await signalerProblemeLivraison(
+      livraison.livraison_id,
+      problemType,
+      problemNotes
+    );
+
+    if (result?.success) {
+      Alert.alert(
+        'Signalement envoyé',
+        'Votre signalement a été enregistré avec succès',
+        [{ 
+          text: 'OK', 
+          onPress: () => {
+            setShowReportModal(false);
+            setProblemType(null);
+            setProblemNotes('');
+            
+            const newStatus = problemType === 'demande_de_remplacement' 
+              ? 'remplacee' 
+              : 'retourne';
+            
+            setLivraison(prev => ({
+              ...prev,
+              statut: 'echec', // Display as echec in UI
+              badge_statut: newStatus, // Use badge_statut for badge
+              colis: prev.colis.map(colis => ({
+                ...colis,
+                statut: newStatus === 'retourne' ? 'retourne' : colis.statut,
+                ...(newStatus === 'retourne' && { date_retour: new Date().toISOString() })
+              }))
+            }));
+          }
+        }]
+      );
+    }
+  } catch (error) {
+    Alert.alert(
+      'Erreur', 
+      error.message || "Échec de l'envoi du signalement",
+      [{ text: 'OK' }]
+    );
+  } finally {
+    setIsReporting(false);
+  }
+};
 
   const openVerifiedGoogleMaps = async () => {
     if (dataErrors.address || !livraison.adresse_livraison) {
@@ -237,13 +296,7 @@ const DetailCommandeScreen = () => {
     );
   };
 
-  const commencerLivraison = () => {
-    confirmAction(
-      () => handleStatusChange('expediee'),
-      "Commencer la livraison",
-      "Voulez-vous commencer cette livraison?"
-    );
-  };
+
 
   const marquerCommeLivree = () => {
     confirmAction(
@@ -256,41 +309,8 @@ const DetailCommandeScreen = () => {
   const signalerEchec = () => {
     setShowReportModal(true);
   };
-  const submitProblemReport = async () => {
-    if (!problemType) {
-      Alert.alert('Erreur', 'Veuillez sélectionner un type de problème');
-      return;
-    }
-  
-    try {
-      setIsReporting(true);
-      const success = await signalerProblemeLivraison(
-        livraison.livraison_id,
-        problemType,
-        problemNotes
-      );
-  
-      if (success) {
-        Alert.alert(
-          'Signalement envoyé',
-          'Votre signalement a été enregistré avec succès',
-          [{ text: 'OK', onPress: () => {
-            setShowReportModal(false);
-            handleStatusChange('echouee');
-            setProblemType(null);
-            setProblemNotes('');
-          }}]
-        );
-      }
-    } catch (error) {
-      Alert.alert('Erreur', error.message || "Échec de l'envoi du signalement");
-    } finally {
-      setIsReporting(false);
-    }
-  };
-  
-  // In the render method, keep only the problem type and notes inputs in the modal
-  // Remove any photo upload components
+
+
   const renderReportModal = () => (
     <Modal
       visible={showReportModal}
@@ -359,6 +379,7 @@ const DetailCommandeScreen = () => {
     </Modal>
   );
 
+  
   const formatPhoneDisplay = (phone) => {
     if (!phone) return "";
     const cleaned = phone.toString().replace(/\D/g, '');
@@ -565,16 +586,7 @@ const DetailCommandeScreen = () => {
 
       {/* Action Buttons */}
       <View style={tw`px-4 mb-8`}>
-        {livraison.statut === "en_preparation" && (
-          <Button
-            title="Commencer la livraison"
-            onPress={commencerLivraison}
-            style={tw`mb-3`}
-            loading={updatingStatus}
-            disabled={updatingStatus}
-            icon={<MaterialCommunityIcons name="truck-delivery" size={20} color="white" />}
-          />
-        )}
+        
 
         {livraison.statut === "expediee" && (
           <>

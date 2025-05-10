@@ -69,7 +69,7 @@ const statusFilters = [
   { id: "echecs", label: "Échecs" }
 ]
 
-const LivraisonsScreen  = () => {
+const LivraisonsScreen = () => {
   const navigation = useNavigation()
   const route = useRoute()
   const [filtreStatut, setFiltreStatut] = useState("toutes")
@@ -84,23 +84,22 @@ const LivraisonsScreen  = () => {
     obtenirLivraisonsParDate
   } = useLivraisons()
 
-  // Check if coming from Accueil screen
   const fromAccueil = route.params?.fromAccueil
 
   const chargerLivraisons = useCallback(async (date) => {
     try {
-      const targetDate = date || dateSelectionnee;
-      const startDate = new Date(targetDate);
-      startDate.setHours(0, 0, 0, 0);
+      const targetDate = date || dateSelectionnee
+      const startDate = new Date(targetDate)
+      startDate.setHours(0, 0, 0, 0)
       
-      const endDate = new Date(targetDate);
-      endDate.setHours(23, 59, 59, 999);
+      const endDate = new Date(targetDate)
+      endDate.setHours(23, 59, 59, 999)
       
-      await obtenirLivraisonsParDate(startDate.toISOString(), endDate.toISOString());
+      await obtenirLivraisonsParDate(startDate.toISOString(), endDate.toISOString())
     } catch (error) {
-      console.error("Error loading deliveries:", error);
+      console.error("Error loading deliveries:", error)
     }
-  }, [dateSelectionnee, obtenirLivraisonsParDate]);
+  }, [dateSelectionnee, obtenirLivraisonsParDate])
 
   useEffect(() => {
     chargerLivraisons()
@@ -126,63 +125,77 @@ const LivraisonsScreen  = () => {
   const navigateToCommande = (id) => {
     navigation.navigate("DetailCommande", { id })
   }
+const getStatutBadge = (statut, badgeStatut) => {
+  const statusMap = {
+    expediee: { label: "En cours", variant: "warning" },
+    livree: { label: "Livrée", variant: "success" },
+    annulee: { label: "Annulée", variant: "danger" },
+    en_attente: { label: "En attente", variant: "info" },
+    en_preparation: { label: "En préparation", variant: "secondary" },
+    retourne: { label: "Retournée", variant: "danger" },
+    remplacee: { label: "Remplacée", variant: "neutral" },
+    echec: { label: "Échec", variant: "danger" }
+  };
+  
+  const statusKey = badgeStatut || statut;
+  const status = statusMap[statusKey] || statusMap.en_preparation;
+  return <Badge variant={status.variant}>{status.label}</Badge>;
+};
 
-  const getStatutBadge = (statut) => {
-    switch (statut) {
-      case "expediee":
-        return <Badge variant="warning">En cours</Badge>
-      case "livree":
-        return <Badge variant="success">Livrée</Badge>
-      case "echec":
-        return <Badge variant="danger">Échec</Badge>
-      default:
-        return <Badge variant="secondary">En attente</Badge>
-    }
-  }
 
-  const renderLivraison = ({ item }) => (
-    <TouchableOpacity 
-      onPress={() => navigateToCommande(item.livraison_id)} 
-      activeOpacity={0.7}
-      style={tw`mb-3`}
-    >
-      <View style={tw`p-4 bg-white shadow-sm rounded-xl`}>
-        <View style={tw`flex-row items-center justify-between mb-3`}>
-          <View>
-            <Text style={tw`text-base font-semibold text-slate-800`}>
-              {item.client_nom || "Client inconnu"}
-            </Text>
-            <Text style={tw`mt-1 text-xs text-slate-500`}>
-              Réf: {item.reference || "N/A"} • {formatShortDate(item.displayDate)}
-            </Text>
-          </View>
-          {getStatutBadge(item.statut)}
-        </View>
 
-        <View style={tw`flex-row items-center mb-2`}>
-          <MaterialCommunityIcons 
-            name="map-marker" 
-            size={16} 
-            color={tw.color("text-slate-500")} 
-          />
-          <Text style={tw`flex-1 ml-2 text-sm text-slate-600`}>
-            {item.adresse_livraison || "Adresse non spécifiée"}
+// Update the renderLivraison function
+const renderLivraison = ({ item }) => (
+  <TouchableOpacity 
+    onPress={() => navigateToCommande(item.livraison_id)} 
+    activeOpacity={0.7}
+    style={tw`mb-3`}
+  >
+    <View style={tw`p-4 bg-white shadow-sm rounded-xl`}>
+      <View style={tw`flex-row items-center justify-between mb-3`}>
+        <View>
+          <Text style={tw`text-base font-semibold text-slate-800`}>
+            {item.client_nom || "Client inconnu"}
+          </Text>
+          <Text style={tw`mt-1 text-xs text-slate-500`}>
+            Réf: {item.reference || "N/A"} • {formatShortDate(item.displayDate)}
           </Text>
         </View>
-
-        <View style={tw`flex-row items-center`}>
-          <MaterialCommunityIcons 
-            name="package-variant" 
-            size={16} 
-            color={tw.color("text-slate-500")} 
-          />
-          <Text style={tw`flex-1 ml-2 text-sm text-slate-600`} numberOfLines={1}>
-            {item.colis?.map(colis => colis.numero_suivi).join(", ") || "Aucun détail de colis"}
-          </Text>
-        </View>
+        {getStatutBadge(item.statut, item.badge_statut)}
       </View>
-    </TouchableOpacity>
-  )
+
+      <View style={tw`flex-row items-center mb-2`}>
+        <MaterialCommunityIcons 
+          name="map-marker" 
+          size={16} 
+          color={tw.color("text-slate-500")} 
+        />
+        <Text style={tw`flex-1 ml-2 text-sm text-slate-600`}>
+          {item.adresse_livraison || "Adresse non spécifiée"}
+        </Text>
+      </View>
+
+      <View style={tw`flex-row items-center`}>
+        <MaterialCommunityIcons 
+          name="package-variant" 
+          size={16} 
+          color={tw.color("text-slate-500")} 
+        />
+        <Text style={tw`flex-1 ml-2 text-sm text-slate-600`} numberOfLines={1}>
+          {item.colis?.map(colis => colis.numero_suivi).join(", ") || "Aucun détail de colis"}
+        </Text>
+      </View>
+
+      {item.retour && (
+        <View style={tw`pt-2 mt-2 border-t border-slate-100`}>
+          <Text style={tw`text-xs text-slate-500`}>
+            Motif: {item.retour.motif || "Non spécifié"}
+          </Text>
+        </View>
+      )}
+    </View>
+  </TouchableOpacity>
+);
 
   const renderSectionHeader = ({ section: { title } }) => (
     <View style={tw`px-4 py-2 mt-4 mb-2 rounded-lg bg-slate-100`}>
@@ -329,4 +342,4 @@ const LivraisonsScreen  = () => {
   )
 }
 
-export default LivraisonsScreen 
+export default LivraisonsScreen

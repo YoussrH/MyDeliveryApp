@@ -1,15 +1,17 @@
+// File: navigation/AppNavigator.js
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { TouchableOpacity, View, Text, ActivityIndicator } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSocket } from "@/contexts/SocketContext";
 import tw from "@/utils/tw";
 
 // Screens
 import SplashScreen from "@/screens/Acceuil/SplashScreen";
 import ConnexionScreen from "@/screens/Auth/ConnexionScreen";
 import AccueilScreen from "@/screens/Acceuil/AccueilScreen";
-import LivraisonsScreen  from "@/screens/Commande/LivraisonsScreen";
+import LivraisonsScreen from "@/screens/Commande/LivraisonsScreen";
 import ScannerScreen from "@/screens/ScannerScreen";
 import NotificationsScreen from "@/screens/NotificationsScreen";
 import DetailCommandeScreen from "@/screens/Commande/DetailCommandeScreen";
@@ -18,6 +20,7 @@ import ReinitialiserMotDePasseScreen from "@/screens/Auth/ReinitialiserMotDePass
 import ChangerMotDePasseScreen from "@/screens/Auth/ChangerMotDePasseScreen";
 import VerifierCodeScreen from "@/screens/Auth/VerifierCodeScreen";
 import ProfilScreen from "@/screens/Auth/ProfilScreen";
+
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -35,7 +38,37 @@ const ScanButton = ({ children, onPress }) => {
   );
 };
 
+const HeaderRight = ({ navigation }) => {
+  const { notifications } = useSocket();
+  const unreadCount = notifications.filter(n => !n.lue).length;
+
+  return (
+    <View style={tw`flex-row items-center pr-4`}>
+      <TouchableOpacity 
+        onPress={() => navigation.navigate('Notifications')}
+        style={tw`relative mr-2`}
+      >
+        <Ionicons 
+          name="notifications-outline" 
+          size={24} 
+          color={tw.color("slate-600")} 
+        />
+        {unreadCount > 0 && (
+          <View style={tw`absolute items-center justify-center w-5 h-5 bg-blue-500 rounded-full -top-1 -right-1`}>
+            <Text style={tw`text-xs text-white `}>
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 const TabNavigator = () => {
+  const { notifications } = useSocket();
+  const unreadCount = notifications.filter(n => !n.lue).length;
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -62,7 +95,7 @@ const TabNavigator = () => {
       />
       <Tab.Screen
         name="Colis"
-        component={LivraisonsScreen }
+        component={LivraisonsScreen}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
             <MaterialCommunityIcons 
@@ -95,7 +128,7 @@ const TabNavigator = () => {
               size={24} 
             />
           ),
-          tabBarBadge: 3,
+          tabBarBadge: unreadCount > 0 ? unreadCount : null,
           tabBarBadgeStyle: tw`text-white bg-orange-600`,
         }}
       />
@@ -175,14 +208,20 @@ const AppNavigator = () => {
   }
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator 
+      screenOptions={({ navigation }) => ({
+        headerShown: false,
+        headerRight: () => <HeaderRight navigation={navigation} />,
+        headerRightContainerStyle: tw`pr-4`,
+      })}
+    >
       <Stack.Screen name="Splash" component={SplashScreen} />
       {utilisateur && token ? (
         <>
           <Stack.Screen name="App" component={TabNavigator} />
           <Stack.Screen 
             name="Livraisons" 
-            component={LivraisonsScreen }
+            component={LivraisonsScreen}
             options={{
               headerShown: true,
               title: "Livraisons",
@@ -195,14 +234,14 @@ const AppNavigator = () => {
           <Stack.Screen
             name="DetailCommande"
             component={DetailCommandeScreen}
-            options={{
+            options={({ route }) => ({
               headerShown: true,
-              title: "Détails de commande",
+              title: `Commande #${route.params?.reference || ''}`,
               headerTitleStyle: tw`font-mono text-lg font-semibold text-slate-800`,
               headerBackTitleVisible: false,
               headerTintColor: tw.color("text-orange-600"),
               headerStyle: tw`bg-white border-b border-slate-200`,
-            }}
+            })}
           />
           <Stack.Screen
             name="ChangerMotDePasse"
@@ -216,7 +255,7 @@ const AppNavigator = () => {
               headerStyle: tw`bg-white border-b border-slate-200`,
             }}
           />
-            <Stack.Screen 
+          <Stack.Screen 
             name="ReinitialiserMotDePasse" 
             component={ReinitialiserMotDePasseScreen}
             options={{
@@ -228,7 +267,7 @@ const AppNavigator = () => {
               headerStyle: tw`bg-white border-b border-slate-200`,
             }}
           />
-              <Stack.Screen 
+          <Stack.Screen 
             name="Profil" 
             component={ProfilScreen}
             options={{

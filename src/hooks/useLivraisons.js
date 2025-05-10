@@ -105,7 +105,7 @@ export const useLivraisons = () => {
   }, [fetchData]);
 
   // Get deliveries by date range
-  const obtenirLivraisonsParDate = useCallback(async (dateDebut, dateFin) => {
+/*   const obtenirLivraisonsParDate = useCallback(async (dateDebut, dateFin) => {
     const source = axios.CancelToken.source();
     activeRequests.current.add(source);
 
@@ -154,7 +154,7 @@ export const useLivraisons = () => {
       activeRequests.current.delete(source);
       setChargement(prev => ({ ...prev, livraisons: false }));
     }
-  }, [api, estAuthentifie]);
+  }, [api, estAuthentifie]); */
 
   // Get statistics
   const obtenirStatistiques = useCallback(async () => {
@@ -174,7 +174,8 @@ export const useLivraisons = () => {
     setLivraisons(data);
     return data;
   }, [fetchData]);
-  const obtenirLivraisonParId = useCallback(async (id) => {
+
+/*   const obtenirLivraisonParId = useCallback(async (id) => {
     try {
       setChargement(prev => ({ ...prev, details: true }));
       setErreur(null);
@@ -194,8 +195,168 @@ export const useLivraisons = () => {
     } finally {
       setChargement(prev => ({ ...prev, details: false }));
     }
-  }, [api]);
+  }, [api]); */
 
+
+/*  // Update the obtenirLivraisonsParDate function
+const obtenirLivraisonsParDate = useCallback(async (dateDebut, dateFin) => {
+  const source = axios.CancelToken.source();
+  activeRequests.current.add(source);
+
+  try {
+    setChargement(prev => ({ ...prev, livraisons: true }));
+    setErreur(null);
+
+    if (!estAuthentifie) {
+      throw new axios.Cancel('User not authenticated');
+    }
+
+    const params = {};
+    if (dateDebut) {
+      const startDate = new Date(dateDebut);
+      startDate.setHours(0, 0, 0, 0);
+      params.dateDebut = startDate.toISOString();
+    }
+    if (dateFin) {
+      const endDate = new Date(dateFin);
+      endDate.setHours(23, 59, 59, 999);
+      params.dateFin = endDate.toISOString();
+    }
+
+    const response = await api.get('/livraisons/mes-livraisons/par-date', { 
+      params,
+      cancelToken: source.token 
+    });
+    
+    if (response.data?.success) {
+      const data = response.data.data.map(item => ({
+        ...item,
+        colis: item.colis || [],
+        date_livraison: item.date_livraison || item.colis?.[0]?.date_livraison,
+        date_retour: item.date_retour || item.colis?.[0]?.date_retour,
+        // Ensure status is properly mapped
+        statut: item.statut === 'remplacee' || item.statut === 'retourne' ? 'echec' : item.statut,
+        badge_statut: item.badge_statut || item.statut
+      }));
+      setLivraisons(data);
+      return data;
+    }
+    throw new Error(response.data?.message || 'Failed to get deliveries by date');
+  } catch (err) {
+    if (!axios.isCancel(err)) {
+      setErreur(err.message);
+      console.error('Error getting deliveries by date:', err);
+    }
+    throw err;
+  } finally {
+    activeRequests.current.delete(source);
+    setChargement(prev => ({ ...prev, livraisons: false }));
+  }
+}, [api, estAuthentifie]);
+
+// Update the obtenirLivraisonParId function
+const obtenirLivraisonParId = useCallback(async (id) => {
+  try {
+    setChargement(prev => ({ ...prev, details: true }));
+    setErreur(null);
+  
+    const response = await api.get(`/livraisons/obtenirLivraisonParId/${id}`);
+    if (response.data?.success) {
+      const data = response.data.data;
+      return {
+        ...data,
+        statut: data.statut === 'remplacee' || data.statut === 'retourne' ? 'echec' : data.statut,
+        badge_statut: data.badge_statut || data.statut,
+        date_livraison: data.date_livraison || data.colis?.[0]?.date_livraison,
+        date_retour: data.date_retour || data.colis?.[0]?.date_retour
+      };
+    }
+    throw new Error(response.data?.message || 'Échec de la récupération des détails');
+  } catch (err) {
+    setErreur(err.message);
+    console.error('Erreur récupération détails:', err);
+    throw err;
+  } finally {
+    setChargement(prev => ({ ...prev, details: false }));
+  }
+}, [api]); 
+ */
+
+const obtenirLivraisonsParDate = useCallback(async (dateDebut, dateFin) => {
+  const source = axios.CancelToken.source();
+  activeRequests.current.add(source);
+
+  try {
+    setChargement(prev => ({ ...prev, livraisons: true }));
+    setErreur(null);
+
+    if (!estAuthentifie) {
+      throw new axios.Cancel('User not authenticated');
+    }
+
+    const params = {};
+    if (dateDebut) {
+      const startDate = new Date(dateDebut);
+      startDate.setHours(0, 0, 0, 0);
+      params.dateDebut = startDate.toISOString();
+    }
+    if (dateFin) {
+      const endDate = new Date(dateFin);
+      endDate.setHours(23, 59, 59, 999);
+      params.dateFin = endDate.toISOString();
+    }
+
+    const response = await api.get('/livraisons/mes-livraisons/par-date', { 
+      params,
+      cancelToken: source.token 
+    });
+    
+    if (response.data?.success) {
+      const data = response.data.data.map(item => ({
+        ...item,
+        colis: item.colis || [],
+        statut: item.statut === 'remplacee' || item.statut === 'retourne' ? 'echec' : item.statut,
+        badge_statut: item.badge_statut || item.statut // Preserve badge_statut
+      }));
+      setLivraisons(data);
+      return data;
+    }
+    throw new Error(response.data?.message || 'Failed to get deliveries by date');
+  } catch (err) {
+    if (!axios.isCancel(err)) {
+      setErreur(err.message);
+      console.error('Error getting deliveries by date:', err);
+    }
+    throw err;
+  } finally {
+    activeRequests.current.delete(source);
+    setChargement(prev => ({ ...prev, livraisons: false }));
+  }
+}, [api, estAuthentifie]);
+
+const obtenirLivraisonParId = useCallback(async (id) => {
+  try {
+    setChargement(prev => ({ ...prev, details: true }));
+    setErreur(null);
+  
+    const response = await api.get(`/livraisons/obtenirLivraisonParId/${id}`);
+    if (response.data?.success) {
+      const data = response.data.data;
+      return {
+        ...data,
+        statut: data.statut === 'remplacee' || data.statut === 'retourne' ? 'echec' : data.statut,
+        badge_statut: data.badge_statut || data.statut // Preserve badge_statut
+      };
+    }
+    throw new Error(response.data?.message || 'Échec de la récupération des détails');
+  } catch (err) {
+    setErreur(err.message);
+    console.error('Erreur récupération détails:', err);
+    throw err;
+  } finally {
+    setChargement(prev => ({ ...prev, details: false }));
+  }
+}, [api]);
   const updateServiceStatus = useCallback(async (enService) => {
     try {
       setChargement(prev => ({ ...prev, service: true }));
@@ -272,12 +433,6 @@ export const useLivraisons = () => {
       setChargement(prev => ({ ...prev, signalement: true }));
       setErreur(null);
   
-      console.log('Preparing problem report:', {
-        commandeId,
-        type,
-        notes
-      });
-  
       const response = await api.post(
         `/livraisons/signaler-probleme/${commandeId}`,
         {
@@ -290,43 +445,37 @@ export const useLivraisons = () => {
         }
       );
   
-      console.log('Server response:', response.data);
-  
       if (response.data?.success) {
-        return true;
+        // If a replacement order was created, add it to the response
+        if (response.data.data?.replacement_order_id) {
+          return {
+            success: true,
+            replacementOrderId: response.data.data.replacement_order_id
+          };
+        }
+        return { success: true };
       }
   
-      console.error('Unexpected server response:', response.data);
       throw new Error(response.data?.message || 'Échec du signalement');
   
     } catch (err) {
       if (!axios.isCancel(err)) {
-        console.error('Error reporting problem:', {
-          error: err,
-          response: err.response?.data,
-          request: {
-            commandeId,
-            type,
-            notes
+        let errorMessage = err.message;
+        
+        if (err.response) {
+          if (err.response.status === 400) {
+            errorMessage = err.response.data.message || 'Données invalides';
+          } else if (err.response.status === 403) {
+            errorMessage = 'Vous n\'êtes pas autorisé à signaler un problème pour cette commande';
+          } else if (err.response.status === 404) {
+            errorMessage = 'Commande introuvable';
           }
-        });
-  
-        setErreur({
-          message: err.response?.data?.message || err.message,
-          details: err.response?.data?.details,
-          status: err.response?.status
-        });
-  
-        if (err.response?.status === 400) {
-          throw new Error(err.response.data.message || 'Données invalides envoyées au serveur');
-        } else if (err.response?.status === 403) {
-          throw new Error('Vous n\'êtes pas autorisé à signaler un problème pour cette commande');
-        } else if (err.response?.status === 404) {
-          throw new Error('Commande introuvable');
-        } else {
-          throw err;
         }
+        
+        setErreur(errorMessage);
+        throw new Error(errorMessage);
       }
+      return { success: false };
     } finally {
       activeRequests.current.delete(source);
       setChargement(prev => ({ ...prev, signalement: false }));

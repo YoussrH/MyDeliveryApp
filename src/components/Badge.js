@@ -13,6 +13,8 @@ const Badge = ({ children, variant = "default", size = "default", style, textSty
         return styles.badgeWarning
       case "danger":
         return styles.badgeDanger
+      case "replacement":
+        return styles.badgeReplacement  
       default:
         return styles.badgeDefault
     }
@@ -30,6 +32,8 @@ const Badge = ({ children, variant = "default", size = "default", style, textSty
         return styles.textWarning
       case "danger":
         return styles.textDanger
+      case "replacement":
+        return styles.textReplacement  
       default:
         return styles.textDefault
     }
@@ -89,7 +93,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#f59e0b",
   },
   badgeDanger: {
-    backgroundColor: "#ef4444",
+    backgroundColor: "#991b1b",
+  },
+  badgeReplacement: {
+    backgroundColor: "#3b82f6",
   },
   badgeSm: {
     paddingHorizontal: 6,
@@ -116,6 +123,9 @@ const styles = StyleSheet.create({
     color: "#ffffff",
   },
   textWarning: {
+    color: "#ffffff",
+  },
+  textReplacement: {
     color: "#ffffff",
   },
   textDanger: {

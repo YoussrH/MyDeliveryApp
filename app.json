@@ -4,7 +4,7 @@
     "slug": "MyDeliveryApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/iconapp.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -17,8 +17,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/iconapp.png",
-        "backgroundImage": "./assets/iconapp.png",
+        "foregroundImage": "./assets/icon.png",
+        "backgroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,

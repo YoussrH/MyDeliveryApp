@@ -87,7 +87,7 @@ const ConnexionScreen = () => {
         <View style={tw`items-center mb-10`}>
           <View>
             <Image
-              source={require('../../../assets/iconapp.png')}
+              source={require('../../../assets/icon.png')}
               style={tw`items-center justify-center mb-4 rounded-full h-28 w-28`}
               resizeMode="contain"
             />

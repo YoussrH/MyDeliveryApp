@@ -45,6 +45,19 @@ const ProfilScreen = ({ navigation }) => {
           cancelToken: source.token
         });
         setProfileData(response.data.livreur);
+        
+        // Initialize formData with the fetched data
+        setFormData({
+          utilisateur: {
+            prenom: response.data.livreur.utilisateur.prenom,
+            nom: response.data.livreur.utilisateur.nom,
+            email: response.data.livreur.utilisateur.email
+          },
+          telephone: response.data.livreur.telephone || '',
+          statut: response.data.livreur.statut === 'actif',
+          type_vehicule: response.data.livreur.type_vehicule || '',
+          plaque_immatriculation: response.data.livreur.plaque_immatriculation || ''
+        });
       } catch (err) {
         if (!axios.isCancel(err)) {
           console.error(err);
@@ -62,7 +75,23 @@ const ProfilScreen = ({ navigation }) => {
     };
   }, []);
 
-  const toggleEdition = () => setEdition(!edition);
+  const toggleEdition = () => {
+    if (!edition) {
+      // When entering edit mode, refresh formData with current profileData
+      setFormData({
+        utilisateur: {
+          prenom: profileData.utilisateur.prenom,
+          nom: profileData.utilisateur.nom,
+          email: profileData.utilisateur.email
+        },
+        telephone: profileData.telephone || '',
+        statut: profileData.statut === 'actif',
+        type_vehicule: profileData.type_vehicule || '',
+        plaque_immatriculation: profileData.plaque_immatriculation || ''
+      });
+    }
+    setEdition(!edition);
+  };
 
   const handleChange = (field, value) => {
     if (field.startsWith('utilisateur.')) {
@@ -88,6 +117,10 @@ const ProfilScreen = ({ navigation }) => {
       });
       Alert.alert('Succès', 'Profil mis à jour avec succès.');
       setEdition(false);
+      
+      // Refresh profile data after update
+      const response = await api.get('/livreur/mon-profil');
+      setProfileData(response.data.livreur);
     } catch (error) {
       console.error(error);
       Alert.alert('Erreur', "Une erreur s'est produite lors de la mise à jour.");
@@ -114,8 +147,6 @@ const ProfilScreen = ({ navigation }) => {
   const handleChangementMotDePasse = () => {
     navigation.navigate('ChangerMotDePasse');
   };
-
-
 
   return (
     <ScrollView style={tw`flex-1 pt-10 bg-slate-50`} contentContainerStyle={tw`p-4`}>
@@ -286,7 +317,6 @@ const ProfilScreen = ({ navigation }) => {
           style={[tw`mb-3`, { backgroundColor: tw.color('orange-600'), borderColor: tw.color('orange-600') }]}
           titleStyle={{ color: 'white' }}
         />
-
 
         <Button
           title="Déconnexion"
