@@ -263,6 +263,76 @@ export const useLivraisons = () => {
       setChargement(prev => ({ ...prev, statut: false }));
     }
   }, [api, livraisons, livreurInfo]);
+
+  const signalerProblemeLivraison = useCallback(async (commandeId, type, notes) => {
+    const source = axios.CancelToken.source();
+    activeRequests.current.add(source);
+  
+    try {
+      setChargement(prev => ({ ...prev, signalement: true }));
+      setErreur(null);
+  
+      console.log('Preparing problem report:', {
+        commandeId,
+        type,
+        notes
+      });
+  
+      const response = await api.post(
+        `/livraisons/signaler-probleme/${commandeId}`,
+        {
+          type,
+          notes: notes || ''
+        },
+        {
+          cancelToken: source.token,
+          timeout: 10000
+        }
+      );
+  
+      console.log('Server response:', response.data);
+  
+      if (response.data?.success) {
+        return true;
+      }
+  
+      console.error('Unexpected server response:', response.data);
+      throw new Error(response.data?.message || 'Échec du signalement');
+  
+    } catch (err) {
+      if (!axios.isCancel(err)) {
+        console.error('Error reporting problem:', {
+          error: err,
+          response: err.response?.data,
+          request: {
+            commandeId,
+            type,
+            notes
+          }
+        });
+  
+        setErreur({
+          message: err.response?.data?.message || err.message,
+          details: err.response?.data?.details,
+          status: err.response?.status
+        });
+  
+        if (err.response?.status === 400) {
+          throw new Error(err.response.data.message || 'Données invalides envoyées au serveur');
+        } else if (err.response?.status === 403) {
+          throw new Error('Vous n\'êtes pas autorisé à signaler un problème pour cette commande');
+        } else if (err.response?.status === 404) {
+          throw new Error('Commande introuvable');
+        } else {
+          throw err;
+        }
+      }
+    } finally {
+      activeRequests.current.delete(source);
+      setChargement(prev => ({ ...prev, signalement: false }));
+    }
+  }, [api]);
+
   // Load initial data
   useEffect(() => {
     let isMounted = true;
@@ -311,7 +381,7 @@ export const useLivraisons = () => {
     obtenirStatistiques,
     obtenirLivraisonsParLivreur,
     obtenirLivraisonParId,
-    
+    signalerProblemeLivraison,
     mettreAJourStatutLivraison,
     updateServiceStatus,
     refetch: obtenirLivraisonsAujourdhui

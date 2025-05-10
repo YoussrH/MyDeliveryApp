@@ -7,7 +7,7 @@ import {
   Platform, 
   ScrollView,
   ActivityIndicator,
-  Alert
+  Image
 } from "react-native";
 import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/contexts/AuthContext";
@@ -32,7 +32,6 @@ const ConnexionScreen = () => {
   } = useAuth();
 
   useEffect(() => {
-    // Clear errors when component mounts
     setErreur("");
   }, []);
 
@@ -86,11 +85,17 @@ const ConnexionScreen = () => {
         keyboardShouldPersistTaps="handled"
       >
         <View style={tw`items-center mb-10`}>
-          <View style={tw`items-center justify-center w-20 h-20 mb-4 bg-orange-100 rounded-full`}>
-            <MaterialCommunityIcons name="bike-fast" color={tw.color("text-orange-600")} size={40} />
+          <View>
+            <Image
+              source={require('../../../assets/iconapp.png')}
+              style={tw`items-center justify-center mb-4 rounded-full h-28 w-28`}
+              resizeMode="contain"
+            />
           </View>
           <Text style={tw`mb-2 text-2xl font-bold text-slate-800`}>Livreur Pro</Text>
-          <Text style={tw`text-base text-center text-slate-500`}>Connectez-vous pour commencer</Text>
+          <Text style={tw`text-base text-center text-slate-500`}>
+            Connectez-vous pour commencer
+          </Text>
         </View>
 
         <View style={tw`w-full`}>
@@ -141,7 +146,9 @@ const ConnexionScreen = () => {
             onPress={handleConnexion} 
             disabled={isSubmitting || authChargement}
             style={tw`h-12 mt-2 bg-orange-600`}
-            icon={!(isSubmitting || authChargement) && <Ionicons name="arrow-forward" size={20} color="white" />}
+            icon={!(isSubmitting || authChargement) && (
+              <Ionicons name="arrow-forward" size={20} color="white" />
+            )}
           />
         </View>
       </ScrollView>

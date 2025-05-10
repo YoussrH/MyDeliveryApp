@@ -67,15 +67,12 @@ const ScannerScreen = () => {
       </CameraView>
 
       <View style={styles.bottomContainer}>
-        <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
-          <Text style={styles.buttonText}>Changer caméra</Text>
-        </TouchableOpacity>
 
         {chargement && <ActivityIndicator size="large" color="#000" style={{ marginTop: 10 }} />}
 
         {resultat && (
           <Text style={styles.successText}>
-            ✅ Scan Réussi : {JSON.stringify(resultat)}
+            ✅ Scan Réussi : Livraison Confirmer avec succès
           </Text>
         )}
 

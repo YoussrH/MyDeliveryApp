@@ -1,7 +1,17 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, ScrollView, Linking, Alert, ActivityIndicator, TouchableOpacity } from "react-native";
-import { useRoute, useNavigation } from "@react-navigation/native";
+import React, { useState,useEffect } from "react";
+import { 
+  View, 
+  Text, 
+  ScrollView, 
+  Linking, 
+  Alert, 
+  ActivityIndicator, 
+  TouchableOpacity, 
+  Modal, 
+  TextInput
+} from "react-native";
 import { MaterialCommunityIcons, FontAwesome } from '@expo/vector-icons';
+import { useRoute, useNavigation } from "@react-navigation/native";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLivraisons } from "@/hooks/useLivraisons";
 import Button from "@/components/Button";
@@ -13,9 +23,12 @@ const DetailCommandeScreen = () => {
   const navigation = useNavigation();
   const { id, livraisonId } = route.params;
   const { api, livreurInfo } = useAuth();
-  const { mettreAJourStatutLivraison, obtenirLivraisonParId } = useLivraisons();
+  const { 
+    mettreAJourStatutLivraison, 
+    obtenirLivraisonParId,
+    signalerProblemeLivraison
+  } = useLivraisons();
   
-  // State with better initial values and validation
   const [livraison, setLivraison] = useState({
     client_nom: "",
     reference: "",
@@ -36,14 +49,24 @@ const DetailCommandeScreen = () => {
     coordinates: false
   });
 
-  // Enhanced data fetching with validation
+  // Problem reporting states
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [problemType, setProblemType] = useState(null);
+  const [problemNotes, setProblemNotes] = useState('');
+  const [isReporting, setIsReporting] = useState(false);
+
+  const problemTypes = [
+    { id: 'livraison_echouee', label: "Livraison échouée", icon: "close-circle" },
+    { id: 'produit_endommage', label: "Produit endommagé", icon: "package-variant" },
+    { id: 'adresse_incorrecte', label: "Adresse incorrecte", icon: "map-marker-off" }
+  ];
+
   useEffect(() => {
-    const fetchAndValidateData = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         const rawData = await obtenirLivraisonParId(livraisonId || id);
         
-        // Data validation and transformation
         const validatedData = {
           ...rawData,
           client_nom: rawData.client_nom || "Client inconnu",
@@ -55,7 +78,6 @@ const DetailCommandeScreen = () => {
           colis: validateColis(rawData.colis || [])
         };
 
-        // Check for data issues
         setDataErrors({
           address: !validatedData.adresse_livraison,
           phone: !validatedData.client_telephone,
@@ -76,7 +98,7 @@ const DetailCommandeScreen = () => {
       }
     };
 
-    fetchAndValidateData();
+    fetchData();
   }, [livraisonId, id]);
 
   // Validation helpers
@@ -114,7 +136,6 @@ const DetailCommandeScreen = () => {
     }));
   };
 
-  // Status badge with more precise types
   const getStatutBadge = (statut) => {
     const statusMap = {
       expediee: { label: "En cours", variant: "warning" },
@@ -122,14 +143,14 @@ const DetailCommandeScreen = () => {
       annulee: { label: "Annulée", variant: "danger" },
       en_attente: { label: "En attente", variant: "info" },
       en_preparation: { label: "En préparation", variant: "secondary" },
-      retournee: { label: "Retournée", variant: "neutral" }
+      retournee: { label: "Retournée", variant: "neutral" },
+      echouee: { label: "Échouée", variant: "danger" }
     };
     
     const status = statusMap[statut] || statusMap.en_preparation;
     return <Badge variant={status.variant}>{status.label}</Badge>;
   };
 
-  // Enhanced status change with validation
   const handleStatusChange = async (newStatus) => {
     if (!livraison?.livraison_id) {
       Alert.alert("Erreur", "Données de livraison incomplètes");
@@ -165,7 +186,6 @@ const DetailCommandeScreen = () => {
     }
   };
 
-  // Enhanced Google Maps integration for Tunisia
   const openVerifiedGoogleMaps = async () => {
     if (dataErrors.address || !livraison.adresse_livraison) {
       Alert.alert(
@@ -175,7 +195,7 @@ const DetailCommandeScreen = () => {
           { text: "OK" },
           { 
             text: "Signaler le problème", 
-            onPress: () => navigation.navigate("Support", { issue: "invalid_address" })
+            onPress: () => setShowReportModal(true)
           }
         ]
       );
@@ -186,13 +206,11 @@ const DetailCommandeScreen = () => {
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(tunisiaAddress)}`;
     
     try {
-      // First try opening Google Maps app
       const supported = await Linking.canOpenURL(mapsUrl);
       
       if (supported) {
         await Linking.openURL(mapsUrl);
       } else {
-        // Fallback to browser with confirmation
         Alert.alert(
           "Google Maps",
           "L'application n'est pas installée. Ouvrir dans le navigateur?",
@@ -208,7 +226,6 @@ const DetailCommandeScreen = () => {
     }
   };
 
-  // Action handlers with confirmation
   const confirmAction = (action, title, message) => {
     Alert.alert(
       title,
@@ -237,19 +254,132 @@ const DetailCommandeScreen = () => {
   };
 
   const signalerEchec = () => {
-    Alert.alert(
-      "Problème de livraison",
-      "Sélectionnez la raison:",
-      [
-        { text: "Client absent", onPress: () => handleStatusChange('annulee') },
-        { text: "Adresse incorrecte", onPress: () => handleStatusChange('annulee') },
-        { text: "Autre problème", onPress: () => navigation.navigate("ReportProblem", { livraisonId }) },
-        { text: "Annuler", style: "cancel" }
-      ]
-    );
+    setShowReportModal(true);
+  };
+  const submitProblemReport = async () => {
+    if (!problemType) {
+      Alert.alert('Erreur', 'Veuillez sélectionner un type de problème');
+      return;
+    }
+  
+    try {
+      setIsReporting(true);
+      const success = await signalerProblemeLivraison(
+        livraison.livraison_id,
+        problemType,
+        problemNotes
+      );
+  
+      if (success) {
+        Alert.alert(
+          'Signalement envoyé',
+          'Votre signalement a été enregistré avec succès',
+          [{ text: 'OK', onPress: () => {
+            setShowReportModal(false);
+            handleStatusChange('echouee');
+            setProblemType(null);
+            setProblemNotes('');
+          }}]
+        );
+      }
+    } catch (error) {
+      Alert.alert('Erreur', error.message || "Échec de l'envoi du signalement");
+    } finally {
+      setIsReporting(false);
+    }
+  };
+  
+  // In the render method, keep only the problem type and notes inputs in the modal
+  // Remove any photo upload components
+  const renderReportModal = () => (
+    <Modal
+      visible={showReportModal}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => setShowReportModal(false)}
+    >
+      <View style={tw`justify-end flex-1 bg-black bg-opacity-50`}>
+        <View style={tw`p-6 bg-white rounded-t-3xl max-h-3/4`}>
+          <View style={tw`flex-row items-center justify-between mb-4`}>
+            <Text style={tw`text-xl font-bold text-slate-800`}>Signaler un problème</Text>
+            <TouchableOpacity onPress={() => setShowReportModal(false)}>
+              <MaterialCommunityIcons name="close" size={24} color={tw.color("slate-500")} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView>
+            <Text style={tw`mb-3 text-base font-medium text-slate-700`}>Type de problème</Text>
+            <View style={tw`mb-4`}>
+              {problemTypes.map((type) => (
+                <TouchableOpacity
+                  key={type.id}
+                  style={tw`flex-row items-center p-3 mb-2 bg-white rounded-lg border ${
+                    problemType === type.id ? 'border-orange-500' : 'border-slate-200'
+                  }`}
+                  onPress={() => setProblemType(type.id)}
+                >
+                  <MaterialCommunityIcons
+                    name={type.icon}
+                    size={20}
+                    color={problemType === type.id ? tw.color('orange-500') : tw.color('slate-500')}
+                  />
+                  <Text style={tw`ml-3 text-slate-700`}>{type.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={tw`mb-3 text-base font-medium text-slate-700`}>Détails (optionnel)</Text>
+            <TextInput
+              style={tw`h-24 p-4 mb-6 bg-white border rounded-lg border-slate-200 text-slate-700`}
+              multiline
+              placeholder="Décrivez le problème rencontré..."
+              value={problemNotes}
+              onChangeText={setProblemNotes}
+            />
+
+            <View style={tw`flex-row justify-between mt-4`}>
+              <Button
+                title="Annuler"
+                onPress={() => setShowReportModal(false)}
+                variant="neutral"
+                style={tw`flex-1 mr-2`}
+                disabled={isReporting}
+              />
+              <Button
+                title={isReporting ? "Envoi..." : "Envoyer"}
+                onPress={submitProblemReport}
+                style={tw`flex-1 ml-2`}
+                loading={isReporting}
+                disabled={isReporting || !problemType}
+              />
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const formatPhoneDisplay = (phone) => {
+    if (!phone) return "";
+    const cleaned = phone.toString().replace(/\D/g, '');
+    return cleaned.match(/.{1,2}/g)?.join(' ') || cleaned;
   };
 
-  // Loading state
+  const formatDeliveryDate = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('fr-FR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return "Date non disponible";
+    }
+  };
+
   if (loading) {
     return (
       <View style={tw`items-center justify-center flex-1 bg-slate-50`}>
@@ -259,7 +389,6 @@ const DetailCommandeScreen = () => {
     );
   }
 
-  // Error state
   if (dataErrors.address && dataErrors.phone) {
     return (
       <View style={tw`items-center justify-center flex-1 p-6 bg-slate-50`}>
@@ -272,7 +401,7 @@ const DetailCommandeScreen = () => {
         </Text>
         <Button
           title="Signaler le problème"
-          onPress={() => navigation.navigate("Support")}
+          onPress={() => setShowReportModal(true)}
           style={tw`mt-6`}
           variant="destructive"
         />
@@ -280,7 +409,6 @@ const DetailCommandeScreen = () => {
     );
   }
 
-  // Main render
   return (
     <ScrollView style={tw`flex-1 bg-slate-50`} showsVerticalScrollIndicator={false}>
       {/* Header Section */}
@@ -453,20 +581,12 @@ const DetailCommandeScreen = () => {
             <Button
               title="Marquer comme livrée"
               onPress={marquerCommeLivree}
-              style={tw`mb-3`}
+              style={tw`mb-3 bg-orange-600`}
               loading={updatingStatus}
               disabled={updatingStatus}
               icon={<MaterialCommunityIcons name="check-circle" size={20} color="white" />}
             />
             
-            <Button
-              title="Prendre une photo"
-              onPress={() => navigation.navigate("Camera", { livraisonId: livraison.livraison_id })}
-              style={tw`mb-3`}
-              backgroundColor="orange-600"
-              icon={<MaterialCommunityIcons name="camera" size={20} color="white" />}
-            />
-
             <Button
               title="Signaler un problème"
               onPress={signalerEchec}
@@ -476,30 +596,11 @@ const DetailCommandeScreen = () => {
           </>
         )}
       </View>
+
+      {/* Problem Reporting Modal */}
+      {renderReportModal()}
     </ScrollView>
   );
-};
-
-// Helper functions
-const formatPhoneDisplay = (phone) => {
-  if (!phone) return "";
-  const cleaned = phone.toString().replace(/\D/g, '');
-  return cleaned.match(/.{1,2}/g)?.join(' ') || cleaned;
-};
-
-const formatDeliveryDate = (dateString) => {
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  } catch {
-    return "Date non disponible";
-  }
 };
 
 export default DetailCommandeScreen;
