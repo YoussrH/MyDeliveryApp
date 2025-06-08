@@ -1,0 +1,107 @@
+// File: context/SocketContext.js
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { io } from 'socket.io-client';
+import { useAuth } from './AuthContext';
+
+const SocketContext = createContext();
+
+export const SocketProvider = ({ children }) => {
+  const [socket, setSocket] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const { utilisateur, estLivreur, token, estAuthentifie } = useAuth();
+
+  useEffect(() => {
+    // Only connect if authenticated and is a delivery person
+    if (!estAuthentifie || !estLivreur || !token || !utilisateur?.id) {
+      return;
+    }
+
+    const newSocket = io('http://localhost:5000', {
+      withCredentials: true,
+      transports: ['websocket'],
+      auth: { token },
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
+
+    setSocket(newSocket);
+
+    // Connection handlers
+    newSocket.on('connect', () => {
+      console.log('Socket connected');
+      // Subscribe to livreur notifications
+      newSocket.emit('subscribe-livreur', utilisateur.id);
+    });
+
+    newSocket.on('connect_error', (err) => {
+      console.error('Socket connection error:', err);
+    });
+
+    // Notification handlers
+    newSocket.on('livraison:assigned', (notification) => {
+      console.log('New delivery assigned:', notification);
+      setNotifications(prev => [{
+        ...notification,
+        id: Date.now().toString(),
+        lue: false,
+        type: 'nouvelle_commande'
+      }, ...prev]);
+    });
+
+    newSocket.on('livraison:unassigned', (notification) => {
+      console.log('Delivery unassigned:', notification);
+      setNotifications(prev => [{
+        ...notification,
+        id: Date.now().toString(),
+        lue: false,
+        type: 'commande_retiree'
+      }, ...prev]);
+    });
+
+    // Cleanup function
+    return () => {
+      if (newSocket) {
+        console.log('Cleaning up socket connection');
+        newSocket.off('livraison:assigned');
+        newSocket.off('livraison:unassigned');
+        newSocket.off('connect');
+        newSocket.off('connect_error');
+        newSocket.disconnect();
+      }
+    };
+  }, [estAuthentifie, estLivreur, token, utilisateur?.id]);
+
+  const markAsRead = (id) => {
+    setNotifications(prev => 
+      prev.map(notif => 
+        notif.id === id ? { ...notif, lue: true } : notif
+      )
+    );
+  };
+
+  const markAllAsRead = () => {
+    setNotifications(prev => 
+      prev.map(notif => ({ ...notif, lue: true }))
+    );
+  };
+
+  return (
+    <SocketContext.Provider value={{ 
+      socket, 
+      notifications, 
+      setNotifications,
+      markAsRead,
+      markAllAsRead
+    }}>
+      {children}
+    </SocketContext.Provider>
+  );
+};
+
+export const useSocket = () => {
+  const context = useContext(SocketContext);
+  if (!context) {
+    throw new Error('useSocket must be used within a SocketProvider');
+  }
+  return context;
+};

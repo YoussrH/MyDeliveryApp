@@ -2,7 +2,7 @@
 import React from 'react';
 import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useSocket } from '@/contexts/SocketContext';
+import { useLivreurSocket } from '@/contexts/SocketContext';
 import { useNavigation } from '@react-navigation/native';
 import tw from '@/utils/tw';
 
@@ -11,7 +11,7 @@ const NotificationsScreen = () => {
     notifications, 
     markAsRead, 
     markAllAsRead 
-  } = useSocket();
+  } = useLivreurSocket();
   const navigation = useNavigation();
 
   const formatDate = (dateString) => {

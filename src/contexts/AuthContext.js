@@ -11,8 +11,8 @@ export const AuthProvider = ({ children }) => {
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState(null);
   
-  const baseURL = 'http://192.168.1.16:5000';
-  const initialized = useRef(false);
+const baseURL = 'http://localhost:5000';
+const initialized = useRef(false);
 
   // Create axios instance
   const api = axios.create({

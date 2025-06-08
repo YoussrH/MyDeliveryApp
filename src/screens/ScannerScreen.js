@@ -7,9 +7,11 @@ import {
   Animated,
   ActivityIndicator,
   Dimensions,
+  Modal, // Import Modal from react-native
+  TouchableOpacity, // Import for dismissible modal
 } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import { useQRScanner } from "@/hooks/useQRScanner";
+import { useQRScanner } from "@/hooks/useQRScanner"; // Ensure this path is correct
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -18,17 +20,36 @@ const ScannerScreen = () => {
   const [scanned, setScanned] = useState(false);
   const lineAnim = useRef(new Animated.Value(0)).current;
 
+  // State to control the visibility of the feedback modal
+  const [isFeedbackVisible, setIsFeedbackVisible] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [feedbackType, setFeedbackType] = useState("success"); // 'success' or 'error'
+
   const {
     scannerQRCode,
-    resultat,
+    resultat, // Result from the useQRScanner hook
     chargement,
-    erreur,
+    erreur, // Error from the useQRScanner hook
     reinitialiser,
   } = useQRScanner();
 
+  // Effect for the scanning line animation
   useEffect(() => {
     animateLine();
   }, []);
+
+  // Effect to show feedback when resultat or erreur changes
+  useEffect(() => {
+    if (resultat) {
+      setFeedbackMessage("✅ Scan Réussi : Livraison Confirmée avec succès !");
+      setFeedbackType("success");
+      setIsFeedbackVisible(true);
+    } else if (erreur) {
+      setFeedbackMessage(`❌ Erreur : ${erreur}`);
+      setFeedbackType("error");
+      setIsFeedbackVisible(true);
+    }
+  }, [resultat, erreur]); // Re-run when resultat or erreur changes
 
   const animateLine = () => {
     Animated.loop(
@@ -47,31 +68,39 @@ const ScannerScreen = () => {
     ).start();
   };
 
-  if (!permission) return <View />;
+  // Handle camera permission request
+  if (!permission) return <View style={styles.loadingContainer}><ActivityIndicator size="large" color="#FFA500" /></View>;
 
   if (!permission.granted) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.message}>Nous avons besoin d'accéder à la caméra</Text>
-        <Button title="Autoriser" onPress={requestPermission} />
+      <View style={styles.permissionContainer}>
+        <Text style={styles.permissionMessage}>Nous avons besoin d'accéder à la caméra pour scanner les QR codes.</Text>
+        <Button title="Autoriser la caméra" onPress={requestPermission} color="#FFA500" />
       </View>
     );
   }
 
+  // Handle QR code scan event
   const handleScan = async ({ data }) => {
-    if (!scanned) {
-      setScanned(true);
-      await scannerQRCode(data);
+    if (!scanned && !chargement) { // Prevent multiple scans and scanning while loading
+      setScanned(true); // Mark as scanned to prevent immediate re-scanning
+      setIsFeedbackVisible(false); // Hide any previous feedback before starting new scan
+
+      await scannerQRCode(data); // Call your hook's scan function
+
+      // Reset scan state after a delay, regardless of result, to allow new scans
+      // The feedback modal will manage its own visibility.
       setTimeout(() => {
         setScanned(false);
-        reinitialiser();
-      }, 5000);
+        reinitialiser(); // Reset useQRScanner hook state
+      }, 5000); // Allow some time for feedback to be seen before new scan
     }
   };
 
+  // Interpolate for the scanning line animation
   const scanLineTranslate = lineAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 250],
+    outputRange: [0, 250], // Moves the line across the 250px scanArea height
   });
 
   return (
@@ -82,10 +111,10 @@ const ScannerScreen = () => {
         barcodeScannerSettings={{
           barcodeTypes: ["qr", "ean13", "ean8", "upc_a", "upc_e", "code39", "code128"],
         }}
-        onBarcodeScanned={handleScan}
+        onBarcodeScanned={scanned ? undefined : handleScan} // Only active when not 'scanned'
       />
 
-      {/* Overlay outside CameraView */}
+      {/* Overlay for the scanning frame and animation */}
       <View style={styles.overlay}>
         <View style={styles.scanArea}>
           <Animated.View
@@ -95,17 +124,39 @@ const ScannerScreen = () => {
             ]}
           />
         </View>
+        <Text style={styles.scanInstruction}>
+            Placez le code QR dans le cadre
+        </Text>
       </View>
 
-      <View style={styles.bottomContainer}>
-        {chargement && <ActivityIndicator size="large" color="#FFA500" style={{ marginTop: 10 }} />}
-        {resultat && (
-          <Text style={styles.successText}>
-            ✅ Scan Réussi : Livraison Confirmer avec succès
-          </Text>
-        )}
-        {erreur && <Text style={styles.errorText}>❌ {erreur}</Text>}
-      </View>
+      {/* Loading Indicator at the bottom */}
+      {chargement && (
+        <View style={styles.loadingIndicatorContainer}>
+          <ActivityIndicator size="large" color="#FFA500" />
+          <Text style={styles.loadingText}>Vérification du code...</Text>
+        </View>
+      )}
+
+      {/* Feedback Modal */}
+      <Modal
+        animationType="fade" // Or "slide"
+        transparent={true}
+        visible={isFeedbackVisible}
+        onRequestClose={() => setIsFeedbackVisible(false)} // For Android back button
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1} // Prevents opacity change on press
+          onPress={() => setIsFeedbackVisible(false)} // Dismiss on outside press
+        >
+          <View style={styles.feedbackBox}>
+            <Text style={feedbackType === "success" ? styles.feedbackSuccessText : styles.feedbackErrorText}>
+              {feedbackMessage}
+            </Text>
+            <Button title="Fermer" onPress={() => setIsFeedbackVisible(false)} color="#FFA500" />
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
@@ -115,11 +166,27 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#000",
   },
-  message: {
-    textAlign: "center",
-    marginTop: 20,
-    color: "#fff",
+  // --- Permission Styles ---
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#222",
   },
+  permissionContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#222",
+    padding: 20,
+  },
+  permissionMessage: {
+    textAlign: "center",
+    marginBottom: 20,
+    color: "#fff",
+    fontSize: 16,
+  },
+  // --- Scanner Overlay Styles ---
   overlay: {
     position: "absolute",
     top: 0,
@@ -133,34 +200,78 @@ const styles = StyleSheet.create({
     width: 250,
     height: 250,
     borderWidth: 3,
-    borderColor: "#FFA500",
-    borderRadius: 12,
-    overflow: "hidden",
+    borderColor: "#FFA500", // Orange color for the scan border
+    borderRadius: 12, // Slightly rounded corners for the scan frame
+    overflow: "hidden", // Crucial for the scan line animation to stay within bounds
+    backgroundColor: 'rgba(0,0,0,0.2)', // Slightly transparent background for the scan area
   },
   scanLine: {
     width: "100%",
     height: 2,
-    backgroundColor: "#FFA500",
+    backgroundColor: "#FFA500", // Orange scan line
     position: "absolute",
     top: 0,
     left: 0,
   },
-  bottomContainer: {
+  scanInstruction: {
+    color: "#fff",
+    fontSize: 16,
+    marginTop: 20,
+    textAlign: "center",
+    textShadowColor: 'rgba(0, 0, 0, 0.75)', // Add shadow for better readability
+    textShadowOffset: {width: -1, height: 1},
+    textShadowRadius: 10
+  },
+  // --- Loading Indicator Styles ---
+  loadingIndicatorContainer: {
     position: "absolute",
-    bottom: 30,
+    bottom: 80, // Position above the very bottom
     alignSelf: "center",
     alignItems: "center",
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
   },
-  successText: {
-    color: "lime",
+  loadingText: {
+    color: "#fff",
+    marginTop: 5,
     fontSize: 14,
-    marginTop: 10,
+  },
+  // --- Feedback Modal Styles ---
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.7)", // Darker transparent background for modal
+  },
+  feedbackBox: {
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 25,
+    marginHorizontal: 30,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  feedbackSuccessText: {
+    color: "green",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 15,
     textAlign: "center",
   },
-  errorText: {
+  feedbackErrorText: {
     color: "red",
-    fontSize: 14,
-    marginTop: 10,
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 15,
     textAlign: "center",
   },
 });

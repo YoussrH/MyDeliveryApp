@@ -1,14 +1,16 @@
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   View, 
   Text, 
   ScrollView, 
   Linking, 
-  Alert, 
   ActivityIndicator, 
   TouchableOpacity, 
-  Modal, 
-  TextInput
+  Modal,
+  Animated,
+  StyleSheet,
+  TextInput,
+  Alert
 } from "react-native";
 import { MaterialCommunityIcons, FontAwesome } from '@expo/vector-icons';
 import { useRoute, useNavigation } from "@react-navigation/native";
@@ -49,6 +51,11 @@ const DetailCommandeScreen = () => {
     coordinates: false
   });
 
+  // Feedback modal states (like ScannerScreen)
+  const [isFeedbackVisible, setIsFeedbackVisible] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [feedbackType, setFeedbackType] = useState("success");
+
   // Problem reporting states
   const [showReportModal, setShowReportModal] = useState(false);
   const [problemType, setProblemType] = useState(null);
@@ -88,7 +95,7 @@ const DetailCommandeScreen = () => {
         setLivraison(validatedData);
       } catch (error) {
         console.error('Data loading error:', error);
-        Alert.alert("Erreur", "Problème de chargement des données");
+        showFeedback("❌ Erreur: Problème de chargement des données", "error");
         setDataErrors({
           address: true,
           phone: true,
@@ -101,6 +108,13 @@ const DetailCommandeScreen = () => {
 
     fetchData();
   }, [livraisonId, id]);
+
+  // Show feedback modal (like ScannerScreen)
+  const showFeedback = (message, type = "success") => {
+    setFeedbackMessage(message);
+    setFeedbackType(type);
+    setIsFeedbackVisible(true);
+  };
 
   // Validation helpers
   const validateAddress = (address) => {
@@ -137,113 +151,115 @@ const DetailCommandeScreen = () => {
     }));
   };
 
-const getStatutBadge = (statut, badgeStatut) => {
-  const statusMap = {
-    expediee: { label: "En cours", variant: "warning" },
-    livree: { label: "Livrée", variant: "success" },
-    annulee: { label: "Annulée", variant: "danger" },
-    en_attente: { label: "En attente", variant: "info" },
-    en_preparation: { label: "En préparation", variant: "secondary" },
-    retourne: { label: "Retournée", variant: "danger" },
-    remplacee: { label: "Remplacée", variant: "neutral" },
-    echec: { label: "Échec", variant: "danger" }
-  };
-  
-  const statusKey = badgeStatut || statut;
-  const status = statusMap[statusKey] || statusMap.en_preparation;
-  return <Badge variant={status.variant}>{status.label}</Badge>;
-};
-
-// Update the handleStatusChange function
-const handleStatusChange = async (newStatus) => {
-  if (!livraison?.livraison_id) {
-    Alert.alert("Erreur", "Données de livraison incomplètes");
-    return;
-  }
-
-  try {
-    setUpdatingStatus(true);
-    const success = await mettreAJourStatutLivraison(livraison.livraison_id, newStatus);
+  const getStatutBadge = (statut, badgeStatut) => {
+    const statusMap = {
+      expediee: { label: "En cours", variant: "warning" },
+      livree: { label: "Livrée", variant: "success" },
+      annulee: { label: "Annulée", variant: "danger" },
+      en_attente: { label: "En attente", variant: "info" },
+      en_preparation: { label: "En préparation", variant: "secondary" },
+      retourne: { label: "Retournée", variant: "danger" },
+      remplacee: { label: "Remplacée", variant: "neutral" },
+      echec: { label: "Échec", variant: "danger" }
+    };
     
-    if (success) {
-      setLivraison(prev => ({
-        ...prev,
-        statut: newStatus,
-        badge_statut: newStatus,
-        colis: prev.colis.map(colis => ({
-          ...colis,
-          statut: newStatus === 'livree' ? 'livree' : colis.statut,
-          ...(newStatus === 'livree' && { date_livraison: new Date().toISOString() })
-        }))
-      }));
+    const statusKey = badgeStatut || statut;
+    const status = statusMap[statusKey] || statusMap.en_preparation;
+    return <Badge variant={status.variant}>{status.label}</Badge>;
+  };
+
+  const handleStatusChange = async (newStatus) => {
+    if (!livraison?.livraison_id) {
+      showFeedback("❌ Erreur: Données de livraison incomplètes", "error");
+      return;
+    }
+
+    try {
+      setUpdatingStatus(true);
+      const success = await mettreAJourStatutLivraison(livraison.livraison_id, newStatus);
       
-      Alert.alert("Succès", `Statut mis à jour: ${newStatus}`);
-      
-      if (newStatus === 'livree') {
-        setTimeout(() => navigation.goBack(), 1500);
+      if (success) {
+        setLivraison(prev => ({
+          ...prev,
+          statut: newStatus,
+          badge_statut: newStatus,
+          colis: prev.colis.map(colis => ({
+            ...colis,
+            statut: newStatus === 'livree' ? 'livree' : colis.statut,
+            ...(newStatus === 'livree' && { date_livraison: new Date().toISOString() })
+          }))
+        }));
+        
+        showFeedback(`✅ Succès: Statut mis à jour (${getStatusLabel(newStatus)})`);
+        
+        if (newStatus === 'livree') {
+          setTimeout(() => navigation.goBack(), 1500);
+        }
       }
+    } catch (error) {
+      console.error('Status update error:', error);
+      showFeedback("❌ Erreur: Échec de la mise à jour", "error");
+    } finally {
+      setUpdatingStatus(false);
     }
-  } catch (error) {
-    console.error('Status update error:', error);
-    Alert.alert("Erreur", "Échec de la mise à jour");
-  } finally {
-    setUpdatingStatus(false);
-  }
-};
+  };
 
-const submitProblemReport = async () => {
-  if (!problemType) {
-    Alert.alert('Erreur', 'Veuillez sélectionner un type de problème');
-    return;
-  }
+  const getStatusLabel = (status) => {
+    const statusMap = {
+      expediee: "En cours",
+      livree: "Livrée",
+      annulee: "Annulée",
+      en_attente: "En attente",
+      en_preparation: "En préparation",
+      retourne: "Retournée",
+      remplacee: "Remplacée",
+      echec: "Échec"
+    };
+    return statusMap[status] || status;
+  };
 
-  try {
-    setIsReporting(true);
-    const result = await signalerProblemeLivraison(
-      livraison.livraison_id,
-      problemType,
-      problemNotes
-    );
+  const submitProblemReport = async () => {
+    if (!problemType) {
+      showFeedback("❌ Erreur: Veuillez sélectionner un type de problème", "error");
+      return;
+    }
 
-    if (result?.success) {
-      Alert.alert(
-        'Signalement envoyé',
-        'Votre signalement a été enregistré avec succès',
-        [{ 
-          text: 'OK', 
-          onPress: () => {
-            setShowReportModal(false);
-            setProblemType(null);
-            setProblemNotes('');
-            
-            const newStatus = problemType === 'demande_de_remplacement' 
-              ? 'remplacee' 
-              : 'retourne';
-            
-            setLivraison(prev => ({
-              ...prev,
-              statut: 'echec', // Display as echec in UI
-              badge_statut: newStatus, // Use badge_statut for badge
-              colis: prev.colis.map(colis => ({
-                ...colis,
-                statut: newStatus === 'retourne' ? 'retourne' : colis.statut,
-                ...(newStatus === 'retourne' && { date_retour: new Date().toISOString() })
-              }))
-            }));
-          }
-        }]
+    try {
+      setIsReporting(true);
+      const result = await signalerProblemeLivraison(
+        livraison.livraison_id,
+        problemType,
+        problemNotes
       );
+
+      if (result?.success) {
+        showFeedback("✅ Succès: Votre signalement a été enregistré");
+        
+        setShowReportModal(false);
+        setProblemType(null);
+        setProblemNotes('');
+        
+        const newStatus = problemType === 'demande_de_remplacement' 
+          ? 'remplacee' 
+          : 'retourne';
+        
+        setLivraison(prev => ({
+          ...prev,
+          statut: 'echec',
+          badge_statut: newStatus,
+          colis: prev.colis.map(colis => ({
+            ...colis,
+            statut: newStatus === 'retourne' ? 'retourne' : colis.statut,
+            ...(newStatus === 'retourne' && { date_retour: new Date().toISOString() })
+          }))
+        }));
+      }
+    } catch (error) {
+      showFeedback(`❌ Erreur: ${error.message || "Échec de l'envoi du signalement"}`, "error");
+    } finally {
+      setIsReporting(false);
     }
-  } catch (error) {
-    Alert.alert(
-      'Erreur', 
-      error.message || "Échec de l'envoi du signalement",
-      [{ text: 'OK' }]
-    );
-  } finally {
-    setIsReporting(false);
-  }
-};
+  };
 
   const openVerifiedGoogleMaps = async () => {
     if (dataErrors.address || !livraison.adresse_livraison) {
@@ -281,7 +297,7 @@ const submitProblemReport = async () => {
       }
     } catch (error) {
       console.error('Maps error:', error);
-      Alert.alert("Erreur", "Impossible d'ouvrir la carte");
+      showFeedback("❌ Erreur: Impossible d'ouvrir la carte", "error");
     }
   };
 
@@ -296,8 +312,6 @@ const submitProblemReport = async () => {
     );
   };
 
-
-
   const marquerCommeLivree = () => {
     confirmAction(
       () => handleStatusChange('livree'),
@@ -310,7 +324,55 @@ const submitProblemReport = async () => {
     setShowReportModal(true);
   };
 
+  const formatPhoneDisplay = (phone) => {
+    if (!phone) return "";
+    const cleaned = phone.toString().replace(/\D/g, '');
+    return cleaned.match(/.{1,2}/g)?.join(' ') || cleaned;
+  };
 
+  const formatDeliveryDate = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('fr-FR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return "Date non disponible";
+    }
+  };
+
+  // Feedback Modal (like ScannerScreen)
+  const renderFeedbackModal = () => (
+    <Modal
+      animationType="fade"
+      transparent={true}
+      visible={isFeedbackVisible}
+      onRequestClose={() => setIsFeedbackVisible(false)}
+    >
+      <TouchableOpacity
+        style={styles.modalOverlay}
+        activeOpacity={1}
+        onPress={() => setIsFeedbackVisible(false)}
+      >
+        <View style={styles.feedbackBox}>
+          <Text style={feedbackType === "success" ? styles.feedbackSuccessText : styles.feedbackErrorText}>
+            {feedbackMessage}
+          </Text>
+          <Button 
+            title="Fermer" 
+            onPress={() => setIsFeedbackVisible(false)} 
+            style={tw`mt-4 bg-orange-500`}
+          />
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  );
+
+  // Problem Report Modal (updated to match style)
   const renderReportModal = () => (
     <Modal
       visible={showReportModal}
@@ -318,8 +380,8 @@ const submitProblemReport = async () => {
       transparent={true}
       onRequestClose={() => setShowReportModal(false)}
     >
-      <View style={tw`justify-end flex-1 bg-black bg-opacity-50`}>
-        <View style={tw`p-6 bg-white rounded-t-3xl max-h-3/4`}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
           <View style={tw`flex-row items-center justify-between mb-4`}>
             <Text style={tw`text-xl font-bold text-slate-800`}>Signaler un problème</Text>
             <TouchableOpacity onPress={() => setShowReportModal(false)}>
@@ -368,7 +430,7 @@ const submitProblemReport = async () => {
               <Button
                 title={isReporting ? "Envoi..." : "Envoyer"}
                 onPress={submitProblemReport}
-                style={tw`flex-1 ml-2`}
+                style={tw`flex-1 ml-2 bg-orange-500`}
                 loading={isReporting}
                 disabled={isReporting || !problemType}
               />
@@ -378,28 +440,6 @@ const submitProblemReport = async () => {
       </View>
     </Modal>
   );
-
-  
-  const formatPhoneDisplay = (phone) => {
-    if (!phone) return "";
-    const cleaned = phone.toString().replace(/\D/g, '');
-    return cleaned.match(/.{1,2}/g)?.join(' ') || cleaned;
-  };
-
-  const formatDeliveryDate = (dateString) => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('fr-FR', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch {
-      return "Date non disponible";
-    }
-  };
 
   if (loading) {
     return (
@@ -586,8 +626,6 @@ const submitProblemReport = async () => {
 
       {/* Action Buttons */}
       <View style={tw`px-4 mb-8`}>
-        
-
         {livraison.statut === "expediee" && (
           <>
             <Button
@@ -603,16 +641,67 @@ const submitProblemReport = async () => {
               title="Signaler un problème"
               onPress={signalerEchec}
               variant="destructive"
+              style={tw`mb-3 bg-orange-600`}
               icon={<MaterialCommunityIcons name="alert-circle" size={20} color="white" />}
             />
           </>
         )}
       </View>
 
-      {/* Problem Reporting Modal */}
+      {/* Feedback Modal */}
+      {renderFeedbackModal()}
+      
+      {/* Problem Report Modal */}
       {renderReportModal()}
     </ScrollView>
   );
 };
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+  },
+  feedbackBox: {
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 25,
+    marginHorizontal: 30,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    width: "90%",
+  },
+  feedbackSuccessText: {
+    color: "orange",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 15,
+    textAlign: "center",
+  },
+  feedbackErrorText: {
+    color: "red",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 15,
+    textAlign: "center",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 25,
+    marginHorizontal: 20,
+    maxHeight: "80%",
+    width: "90%",
+  },
+});
 
 export default DetailCommandeScreen;

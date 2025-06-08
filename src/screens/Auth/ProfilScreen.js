@@ -111,7 +111,7 @@ const ProfilScreen = ({ navigation }) => {
   const soumettreModifications = async () => {
     setUpdating(true);
     try {
-      await axios.put('http://192.168.1.16:5000/livreur/mettre-a-jour', {
+      await axios.put('http://localhost:5000/livreur/mettre-a-jour', {
         ...formData,
         statut: formData.statut ? 'actif' : 'inactif'
       });

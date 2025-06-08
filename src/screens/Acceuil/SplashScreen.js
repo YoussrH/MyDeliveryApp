@@ -23,7 +23,6 @@ const SplashScreen = ({ navigation }) => {
   const { utilisateur, token, chargement } = useAuth();
 
   useEffect(() => {
-    // Image animation (scale, opacity, y)
     Animated.parallel([
       Animated.timing(imageScale, {
         toValue: 1,
@@ -42,7 +41,6 @@ const SplashScreen = ({ navigation }) => {
       }),
     ]).start();
 
-    // Floating animation for image
     Animated.loop(
       Animated.sequence([
         Animated.timing(imageFloatY, {
@@ -58,7 +56,6 @@ const SplashScreen = ({ navigation }) => {
       ])
     ).start();
 
-    // Rotation animation for image
     Animated.loop(
       Animated.sequence([
         Animated.timing(imageRotate, {
@@ -84,7 +81,6 @@ const SplashScreen = ({ navigation }) => {
       ])
     ).start();
 
-    // Text animation
     Animated.parallel([
       Animated.timing(textOpacity, {
         toValue: 1,
@@ -100,7 +96,6 @@ const SplashScreen = ({ navigation }) => {
       }),
     ]).start();
 
-    // Dots animation
     Animated.timing(dotsOpacity, {
       toValue: 1,
       duration: 1000,
@@ -108,7 +103,6 @@ const SplashScreen = ({ navigation }) => {
       useNativeDriver: true,
     }).start();
 
-    // Individual dot animations
     dotScales.forEach((scale, index) => {
       Animated.loop(
         Animated.sequence([
@@ -145,7 +139,6 @@ const SplashScreen = ({ navigation }) => {
       ).start();
     });
 
-    // Set up navigation timeout
     const navigationTimer = setTimeout(() => {
       if (!chargement) {
         if (utilisateur && token) {
@@ -154,7 +147,7 @@ const SplashScreen = ({ navigation }) => {
           navigation.replace("Auth");
         }
       }
-    }, 3000); // Total duration (animation + slight delay)
+    }, 3000); 
 
     return () => {
       clearTimeout(navigationTimer);

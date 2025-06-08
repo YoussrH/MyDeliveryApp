@@ -294,20 +294,11 @@ const obtenirLivraisonsParDate = useCallback(async (dateDebut, dateFin) => {
       throw new axios.Cancel('User not authenticated');
     }
 
-    const params = {};
-    if (dateDebut) {
-      const startDate = new Date(dateDebut);
-      startDate.setHours(0, 0, 0, 0);
-      params.dateDebut = startDate.toISOString();
-    }
-    if (dateFin) {
-      const endDate = new Date(dateFin);
-      endDate.setHours(23, 59, 59, 999);
-      params.dateFin = endDate.toISOString();
-    }
-
     const response = await api.get('/livraisons/mes-livraisons/par-date', { 
-      params,
+      params: {
+        dateDebut,
+        dateFin
+      },
       cancelToken: source.token 
     });
     
@@ -316,7 +307,9 @@ const obtenirLivraisonsParDate = useCallback(async (dateDebut, dateFin) => {
         ...item,
         colis: item.colis || [],
         statut: item.statut === 'remplacee' || item.statut === 'retourne' ? 'echec' : item.statut,
-        badge_statut: item.badge_statut || item.statut // Preserve badge_statut
+        badge_statut: item.badge_statut || item.statut,
+        date_livraison: item.date_livraison || item.colis?.[0]?.date_livraison,
+        date_retour: item.date_retour || item.colis?.[0]?.date_retour
       }));
       setLivraisons(data);
       return data;
@@ -333,7 +326,6 @@ const obtenirLivraisonsParDate = useCallback(async (dateDebut, dateFin) => {
     setChargement(prev => ({ ...prev, livraisons: false }));
   }
 }, [api, estAuthentifie]);
-
 const obtenirLivraisonParId = useCallback(async (id) => {
   try {
     setChargement(prev => ({ ...prev, details: true }));

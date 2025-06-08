@@ -88,7 +88,13 @@ const LivraisonsScreen = () => {
 
   const chargerLivraisons = useCallback(async (date) => {
     try {
-      const targetDate = date || dateSelectionnee
+      const targetDate = date || dateSelectionnee;
+      if (isNaN(new Date(targetDate).getTime())) {
+        console.warn('Invalid date, using current date instead');
+        const today = new Date();
+        setDateSelectionnee(today);
+        return;
+      }
       const startDate = new Date(targetDate)
       startDate.setHours(0, 0, 0, 0)
       
@@ -102,8 +108,10 @@ const LivraisonsScreen = () => {
   }, [dateSelectionnee, obtenirLivraisonsParDate])
 
   useEffect(() => {
-    chargerLivraisons()
-  }, [])
+const today = new Date();
+    setDateSelectionnee(today);
+    chargerLivraisons(today);
+    }, [])
 
   const filtrerLivraisons = useCallback(() => {
     if (!livraisons || livraisons.length === 0) return []
@@ -266,8 +274,11 @@ const renderLivraison = ({ item }) => (
               Choisir une date
             </Text>
             <DatePicker
-              date={tempDate}
-              onDateChange={setTempDate}
+                date={tempDate}
+              onDateChange={(newDate) => {
+                if (isNaN(newDate.getTime())) return;
+                setTempDate(newDate);
+              }}
               mode="date"
               locale="fr"
               textColor={tw.color("text-slate-800")}
@@ -282,9 +293,13 @@ const renderLivraison = ({ item }) => (
               <TouchableOpacity
                 style={tw`px-6 py-2 bg-orange-600 rounded-full`}
                 onPress={() => {
-                  setDateSelectionnee(tempDate)
-                  setShowDatePicker(false)
-                  chargerLivraisons(tempDate)
+                  if (isNaN(tempDate.getTime())) {
+                    Alert.alert('Date invalide', 'Veuillez sélectionner une date valide');
+                    return;
+                  }
+                  setDateSelectionnee(tempDate);
+                  setShowDatePicker(false);
+                  chargerLivraisons(tempDate);
                 }}
               >
                 <Text style={tw`font-medium text-white`}>Valider</Text>

@@ -1,10 +1,9 @@
-// File: navigation/AppNavigator.js
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { TouchableOpacity, View, Text, ActivityIndicator } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSocket } from "@/contexts/SocketContext";
+import { useLivreurSocket } from "@/contexts/SocketContext";
 import tw from "@/utils/tw";
 
 // Screens
@@ -39,8 +38,8 @@ const ScanButton = ({ children, onPress }) => {
 };
 
 const HeaderRight = ({ navigation }) => {
-  const { notifications } = useSocket();
-  const unreadCount = notifications.filter(n => !n.lue).length;
+  const { notifications } = useLivreurSocket();
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
     <View style={tw`flex-row items-center pr-4`}>
@@ -54,8 +53,8 @@ const HeaderRight = ({ navigation }) => {
           color={tw.color("slate-600")} 
         />
         {unreadCount > 0 && (
-          <View style={tw`absolute items-center justify-center w-5 h-5 bg-blue-500 rounded-full -top-1 -right-1`}>
-            <Text style={tw`text-xs text-white `}>
+          <View style={tw`absolute items-center justify-center w-5 h-5 bg-orange-600 rounded-full -top-1 -right-1`}>
+            <Text style={tw`text-xs text-white`}>
               {unreadCount > 9 ? '9+' : unreadCount}
             </Text>
           </View>
@@ -66,19 +65,21 @@ const HeaderRight = ({ navigation }) => {
 };
 
 const TabNavigator = () => {
-  const { notifications } = useSocket();
-  const unreadCount = notifications.filter(n => !n.lue).length;
+  const { notifications } = useLivreurSocket();
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
         tabBarStyle: tw`h-16 bg-white border-t-0 shadow-md`,
         tabBarActiveTintColor: tw.color("text-orange-600"),
         tabBarInactiveTintColor: tw.color("text-slate-500"),
         tabBarShowLabel: true,
-        headerShown: false,
+        headerShown: route.name !== 'Accueil',
         tabBarLabelStyle: tw`pb-1 text-xs font-medium`,
-      }}
+        headerRight: () => <HeaderRight navigation={route.params?.navigation} />,
+        headerRightContainerStyle: tw`pr-4`,
+      })}
     >
       <Tab.Screen
         name="Accueil"
@@ -94,7 +95,7 @@ const TabNavigator = () => {
         }}
       />
       <Tab.Screen
-        name="Colis"
+        name="Mes livraisons"
         component={LivraisonsScreen}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
@@ -128,7 +129,7 @@ const TabNavigator = () => {
               size={24} 
             />
           ),
-          tabBarBadge: unreadCount > 0 ? unreadCount : null,
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
           tabBarBadgeStyle: tw`text-white bg-orange-600`,
         }}
       />
