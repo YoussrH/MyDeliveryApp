@@ -44,7 +44,7 @@ export const LivreurSocketProvider = ({ children }) => {
         return;
     }
 
-    const socketUrl = 'http://localhost:5000';
+const socketUrl = 'http://192.168.1.110:5000';
     console.log('Attempting to connect to socket URL:', socketUrl);
 
     const newSocket = io(socketUrl, {
